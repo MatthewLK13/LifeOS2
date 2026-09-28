@@ -1,0 +1,1187 @@
+<!doctype html>
+<html lang="en" data-presentation="false">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LifeOS — Grimoire Design Preview</title>
+<meta name="description" content="Interactive design-system preview and contrast audit for LifeOS. Lock the type stack here.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@400..900&family=Literata:opsz,wght@7..72,200..900&family=Anton&family=Marcellus&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   TOKENS — hand-derived from design/design-tokens.json
+   This block is the draft of src/styles/tokens.css.
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* cover — dark chrome. Must stay a MINORITY of screen area. */
+  --cover-900:#16130D; --cover-800:#211C14; --cover-700:#2E2718; --cover-600:#3D3421;
+  --cover-fg:#E8DFC8;  --cover-fg-muted:#A99C7E;
+
+  /* page — parchment. ~90% of screen area. NEVER #FFFFFF. */
+  --page-base:#F1E9D2; --page-raised:#F6F0DE; --page-sunken:#E8DFC4; --page-edge:#DCD2B4;
+
+  /* ink on paper */
+  --ink-900:#2A2419; --ink-700:#4A4030; --ink-500:#6B5E45; --ink-300:#9A8C6E; --ink-100:#C4B896;
+
+  /* accent — cinnabar seal red. The single accent. */
+  --accent:#B23A1F; --accent-deep:#8A2B14; --accent-soft:#E8C9BC;
+
+  /* gold */
+  --gold-on-page:#8A6A14; --gold-on-cover:#D4A72C;
+
+  /* mana — discrete steps, never a gradient */
+  --mana-full:#3F6B45; --mana-warn:#9A6B1E; --mana-critical:#9E2B25;
+
+  /* difficulty */
+  --diff-easy:#4A6B52; --diff-medium:#9A6B1E; --diff-hard:#A63A22; --diff-boss:#6B2B4A;
+
+  --signal-success:#3F6B45; --signal-warning:#9A6B1E; --signal-danger:#9E2B25; --signal-info:#3A5A72;
+
+  /* typography */
+  --font-display:'Grenze Gotisch','Times New Roman',serif;
+  --font-body:'Literata',Georgia,'Times New Roman',serif;
+  --font-numeric:'Anton','Arial Narrow',sans-serif;
+  --font-label:'Marcellus',Georgia,serif;
+
+  /* type scale. Presentation Mode multiplies this by 1.4 — one variable, whole app. */
+  --type-scale:1;
+  --fs-xs:calc(13px * var(--type-scale));
+  --fs-sm:calc(15px * var(--type-scale));
+  --fs-base:calc(17px * var(--type-scale));
+  --fs-lg:calc(20px * var(--type-scale));
+  --fs-xl:calc(24px * var(--type-scale));
+  --fs-2xl:calc(30px * var(--type-scale));
+  --fs-3xl:calc(40px * var(--type-scale));
+  --fs-display:calc(48px * var(--type-scale));
+  --fs-hero:calc(64px * var(--type-scale));
+
+  /* space */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px; --s9:96px;
+  --card-padding:20px;
+
+  /* shape — square is the default. Uniform radius everywhere is a banned pattern. */
+  --r-none:0; --r-sm:2px; --r-md:4px; --r-pill:999px;
+  --b-hair:1px; --b-line:2px; --b-heavy:3px; --b-slab:4px;
+  --sh-sm:2px 2px 0 var(--ink-900);
+  --sh-md:3px 3px 0 var(--ink-900);
+  --sh-lg:5px 5px 0 var(--ink-900);
+  --sh-gold:4px 4px 0 var(--gold-on-page);
+  --press:translate(2px,2px);
+
+  /* motion */
+  --d-instant:80ms; --d-fast:140ms; --d-normal:240ms; --d-slow:420ms; --d-cinematic:1500ms;
+  --e-out:cubic-bezier(.16,1,.3,1);
+  --e-ink:cubic-bezier(.2,.8,.2,1);
+
+  /* layout */
+  --cover-h:56px; --status-h:40px; --app-max:1280px; --measure:72ch;
+}
+
+/* ── Presentation Mode: the highest-leverage feature for the demo ──
+   One attribute on the root. Bigger type, no grain, no animation. */
+[data-presentation="true"] { --type-scale:1.4; --ink-500:#4A4030; --cover-fg-muted:#BCAD8C; }
+[data-presentation="true"] body::before { display:none; }
+[data-presentation="true"] *,
+[data-presentation="true"] *::before,
+[data-presentation="true"] *::after {
+  animation:none !important; transition:none !important;
+}
+/* The OS-level equivalent, carrying the SAME declarations — authored once in
+   design-tokens.json and emitted into both blocks by tokens-to-css.mjs, mirrored
+   here. It is the one signal that fires without anyone pressing the toggle. */
+@media (prefers-contrast: more) {
+  :root { --type-scale:1.4; --ink-500:#4A4030; --cover-fg-muted:#BCAD8C; }
+}
+[data-motion="off"] *,
+[data-motion="off"] *::before,
+[data-motion="off"] *::after {
+  animation:none !important; transition:none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation:none !important; transition:none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════ */
+* { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body {
+  margin:0;
+  background:var(--page-base);
+  color:var(--ink-900);
+  font-family:var(--font-body);
+  font-size:var(--fs-base);
+  line-height:1.6;
+  font-optical-sizing:auto;
+  padding-top:var(--cover-h);
+  padding-bottom:var(--status-h);
+}
+
+/* GRAIN — a STATIC data-URI tile rasterised once and repeated.
+   This is NOT a live feTurbulence filter. See DESIGN.md §6.1: a live
+   turbulence+displacement filter is the single most expensive thing in
+   the system and was observed to thrash iOS Safari. */
+body::before {
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:1;
+  opacity:.05; mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── cover band ── */
+.cover {
+  position:fixed; top:0; left:0; right:0; height:var(--cover-h); z-index:100;
+  background:var(--cover-900); color:var(--cover-fg);
+  border-bottom:var(--b-slab) solid var(--ink-900);
+  display:flex; align-items:center; gap:var(--s5);
+  padding:0 var(--s5);
+}
+.cover__logo {
+  font-family:var(--font-display); font-weight:900; font-size:26px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0;
+  color:var(--cover-fg); white-space:nowrap;
+}
+.cover__nav { display:flex; gap:var(--s5); margin-left:var(--s6); }
+/* Nav uses full cover.fg (13.96:1), not fgMuted — fgMuted measures 6.83:1 and this
+   nav sits at 15px, below the 18px floor that would excuse it. */
+.cover__nav a {
+  color:var(--cover-fg); text-decoration:none; font-size:var(--fs-sm);
+  font-family:var(--font-label); letter-spacing:.04em;
+  border-bottom:var(--b-line) solid transparent; padding-bottom:2px;
+  transition:color var(--d-fast) var(--e-out), border-color var(--d-fast) var(--e-out);
+}
+.cover__nav a:hover, .cover__nav a[aria-current="page"] {
+  color:var(--cover-fg); border-bottom-color:var(--accent);
+}
+.cover__spacer { flex:1; }
+
+/* ── status bar — the second (and last) dark band ── */
+.statusbar {
+  position:fixed; bottom:0; left:0; right:0; height:var(--status-h); z-index:100;
+  background:var(--cover-900); color:var(--cover-fg);
+  border-top:var(--b-heavy) solid var(--ink-900);
+  display:flex; align-items:center; gap:var(--s5); padding:0 var(--s5);
+  font-family:var(--font-label); font-size:var(--fs-sm); letter-spacing:.04em;
+}
+.statusbar__stat { display:flex; align-items:baseline; gap:var(--s2); }
+.statusbar__num { font-family:var(--font-numeric); font-size:19px; line-height:1; }
+.statusbar__label { color:var(--cover-fg); }
+.statusbar__ratio { margin-left:auto; color:var(--cover-fg-muted); }
+.statusbar__ratio b { color:var(--cover-fg); font-family:var(--font-numeric); font-weight:400; font-size:17px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PAGE SCAFFOLD
+   ═══════════════════════════════════════════════════════════════════ */
+.wrap { max-width:var(--app-max); margin:0 auto; padding:var(--s8) var(--s5) var(--s9); position:relative; z-index:2; }
+section { margin-bottom:var(--s9); }
+.sec-head { border-bottom:var(--b-slab) solid var(--ink-900); padding-bottom:var(--s3); margin-bottom:var(--s6); }
+.sec-head h2 {
+  font-family:var(--font-label); font-weight:400; text-transform:uppercase;
+  letter-spacing:.1em; font-size:var(--fs-sm); color:var(--ink-700); margin:0 0 var(--s2);
+}
+/* Body face doing the work, NOT the display face. Section headings are not chapter
+   titles, and the "but it looks good here" exemption is exactly how the rule erodes.
+   Grenze Gotisch stays in the logo, the Chapter II panel and the specimen below. */
+.sec-head h3 {
+  font-family:var(--font-body); font-weight:600; font-size:var(--fs-3xl);
+  line-height:1.15; margin:0; letter-spacing:-.01em;
+}
+.lede { max-width:var(--measure); color:var(--ink-700); font-size:var(--fs-lg); line-height:1.6; margin:0 0 var(--s6); }
+p { max-width:var(--measure); }
+code { font-family:ui-monospace,'Cascadia Mono',Menlo,monospace; font-size:.9em;
+  background:var(--page-sunken); border:var(--b-hair) solid var(--page-edge); padding:1px 5px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   COLOUR SWATCHES
+   ═══════════════════════════════════════════════════════════════════ */
+.swatch-group { margin-bottom:var(--s7); }
+.swatch-group__title {
+  font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em;
+  font-size:var(--fs-sm); color:var(--ink-700); margin:0 0 var(--s3);
+  display:flex; align-items:baseline; gap:var(--s3);
+}
+.swatch-group__note { font-family:var(--font-body); text-transform:none; letter-spacing:0; color:var(--ink-700); font-size:var(--fs-sm); }
+.swatches { display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:var(--s4); }
+.swatch { border:var(--b-heavy) solid var(--ink-900); background:var(--page-raised); }
+.swatch__chip { height:76px; border-bottom:var(--b-heavy) solid var(--ink-900); display:flex; align-items:flex-end; justify-content:flex-end; padding:var(--s2); }
+.swatch__meta { padding:var(--s2) var(--s3) var(--s3); }
+.swatch__name { font-family:var(--font-label); font-size:var(--fs-sm); letter-spacing:.04em; display:block; }
+.swatch__hex { font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--ink-700); text-transform:uppercase; }
+.swatch__ratio { font-family:var(--font-numeric); font-size:15px; display:block; margin-top:var(--s1); }
+.r-aaa { color:var(--mana-full); }
+.r-aa  { color:var(--mana-warn); }
+.r-bad { color:var(--mana-critical); }
+.swatch__tag { font-family:var(--font-label); font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-700); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CONTRAST AUDIT TABLE
+   ═══════════════════════════════════════════════════════════════════ */
+.audit { width:100%; border-collapse:collapse; border:var(--b-heavy) solid var(--ink-900); background:var(--page-raised); }
+.audit th, .audit td { text-align:left; padding:var(--s3) var(--s4); border-bottom:var(--b-hair) solid var(--page-edge); font-size:var(--fs-sm); }
+.audit thead th {
+  background:var(--cover-800); color:var(--cover-fg);
+  font-family:var(--font-label); font-weight:400; text-transform:uppercase;
+  letter-spacing:.08em; font-size:var(--fs-xs); border-bottom:var(--b-heavy) solid var(--ink-900);
+}
+.audit tbody tr:last-child td { border-bottom:none; }
+.audit__sample { display:inline-block; padding:3px 10px; border:var(--b-line) solid var(--ink-900); font-family:var(--font-body); }
+.audit__ratio { font-family:var(--font-numeric); font-size:17px; }
+.audit__verdict { font-family:var(--font-label); text-transform:uppercase; letter-spacing:.06em; font-size:var(--fs-xs); }
+.v-pass { color:var(--mana-full); }
+.v-warn { color:var(--mana-warn); }
+.v-fail { color:var(--mana-critical); }
+.audit tr.is-fail { background:var(--accent-soft); }
+.audit tr.is-note { background:var(--page-sunken); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TYPOGRAPHY SPECIMENS
+   ═══════════════════════════════════════════════════════════════════ */
+.type-role { border-top:var(--b-heavy) solid var(--ink-900); padding:var(--s5) 0; display:grid; grid-template-columns:220px 1fr; gap:var(--s6); }
+.type-role:last-child { border-bottom:var(--b-heavy) solid var(--ink-900); }
+.type-role__id { font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; font-size:var(--fs-sm); color:var(--ink-700); }
+.type-role__id b { display:block; color:var(--ink-900); font-weight:400; font-size:var(--fs-lg); letter-spacing:.02em; text-transform:none; margin-bottom:var(--s2); }
+.type-role__use { font-size:var(--fs-sm); color:var(--ink-700); margin:var(--s2) 0 0; }
+.type-role__use--hard { color:var(--accent-deep); }
+.spec-display { font-family:var(--font-display); font-weight:800; font-size:var(--fs-display); line-height:1.15; letter-spacing:.02em; margin:0; }
+.spec-body { font-family:var(--font-body); font-size:var(--fs-base); line-height:1.6; margin:0; max-width:var(--measure); }
+.spec-body b { font-weight:600; }
+.spec-numeric { font-family:var(--font-numeric); font-size:56px; line-height:1; margin:0; }
+.spec-label { font-family:var(--font-label); text-transform:uppercase; letter-spacing:.1em; font-size:var(--fs-sm); margin:0; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   COMPONENTS
+   ═══════════════════════════════════════════════════════════════════ */
+.grid-2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:var(--s6); align-items:start; }
+.stack { display:flex; flex-direction:column; gap:var(--s5); }
+.row { display:flex; flex-wrap:wrap; gap:var(--s3); align-items:center; }
+.component-label {
+  font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em;
+  font-size:var(--fs-xs); color:var(--ink-700); margin:0 0 var(--s3);
+}
+
+/* ── PanelFrame: double rule + corner ticks ── */
+.panel {
+  background:var(--page-raised);
+  border:var(--b-slab) solid var(--ink-900);
+  box-shadow:var(--sh-md);
+  padding:var(--card-padding);
+  position:relative;
+}
+.panel--framed { padding:calc(var(--card-padding) + 8px); }
+.panel--framed::before {
+  content:""; position:absolute; inset:7px;
+  border:var(--b-line) solid var(--ink-900); pointer-events:none; opacity:.55;
+}
+.panel--framed::after {
+  content:""; position:absolute; inset:-4px; pointer-events:none;
+  background:
+    linear-gradient(var(--ink-900),var(--ink-900)) 0 0/18px var(--b-slab) no-repeat,
+    linear-gradient(var(--ink-900),var(--ink-900)) 0 0/var(--b-slab) 18px no-repeat,
+    linear-gradient(var(--ink-900),var(--ink-900)) 100% 0/18px var(--b-slab) no-repeat,
+    linear-gradient(var(--ink-900),var(--ink-900)) 100% 0/var(--b-slab) 18px no-repeat,
+    linear-gradient(var(--ink-900),var(--ink-900)) 0 100%/18px var(--b-slab) no-repeat,
+    linear-gradient(var(--ink-900),var(--ink-900)) 0 100%/var(--b-slab) 18px no-repeat,
+    linear-gradient(var(--ink-900),var(--ink-900)) 100% 100%/18px var(--b-slab) no-repeat,
+    linear-gradient(var(--ink-900),var(--ink-900)) 100% 100%/var(--b-slab) 18px no-repeat;
+}
+.panel--dark { background:var(--cover-800); color:var(--cover-fg); border-color:var(--cover-900); }
+.panel--dark::before { border-color:var(--cover-600); opacity:1; }
+
+/* ── DifficultyChip — OUTLINED, not filled. See audit note below. ── */
+.chip {
+  display:inline-flex; align-items:center; gap:var(--s2);
+  border:var(--b-heavy) solid var(--ink-900);
+  border-radius:var(--r-pill);
+  background:var(--page-raised);
+  padding:3px 12px 3px 8px;
+  font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em;
+  font-size:var(--fs-xs); color:var(--ink-900); white-space:nowrap;
+}
+.chip__mark { width:11px; height:11px; flex:none; border:var(--b-hair) solid var(--ink-900); }
+.chip--easy   { border-color:var(--diff-easy);   } .chip--easy   .chip__mark { background:var(--diff-easy); }
+.chip--medium { border-color:var(--diff-medium); } .chip--medium .chip__mark { background:var(--diff-medium); }
+.chip--hard   { border-color:var(--diff-hard);   } .chip--hard   .chip__mark { background:var(--diff-hard); }
+/* boss is the ONE filled chip — measured 8.91:1 with page.raised text, where
+   easy/medium/hard only reach AAA-large. So boss differs in KIND, not just hue. */
+.chip--boss   { border-width:var(--b-slab); border-color:var(--ink-900);
+                background:var(--diff-boss); color:var(--page-raised); letter-spacing:.12em; }
+.chip--boss   .chip__mark { background:var(--page-raised); border-color:var(--page-raised); }
+.chip--mana   { border-color:var(--mana-full); } .chip--mana .chip__mark { background:var(--mana-full); }
+
+/* ── ManaBar — segmented, discrete colour steps ── */
+.mana { display:flex; flex-direction:column; gap:var(--s2); }
+.mana__head { display:flex; align-items:baseline; justify-content:space-between; gap:var(--s4); }
+.mana__label { font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; font-size:var(--fs-sm); color:var(--ink-700); }
+.mana__value { font-family:var(--font-numeric); font-size:30px; line-height:1; }
+.mana__value small { font-family:var(--font-label); font-size:var(--fs-sm); color:var(--ink-700); }
+.mana__track {
+  display:flex; gap:2px; padding:3px;
+  border:var(--b-heavy) solid var(--ink-900); background:var(--page-sunken);
+}
+.mana__cell { flex:1; height:22px; background:var(--page-base); border:var(--b-hair) solid var(--page-edge); }
+.mana__cell.is-on { border-color:var(--ink-900); }
+.mana--full     .mana__cell.is-on { background:var(--mana-full); }
+.mana--warn     .mana__cell.is-on { background:var(--mana-warn); }
+.mana--critical .mana__cell.is-on { background:var(--mana-critical); }
+.mana--critical .mana__value { color:var(--mana-critical); }
+.mana--warn     .mana__value { color:var(--mana-warn); }
+.mana__foot { font-size:var(--fs-sm); color:var(--ink-700); margin:0; }
+
+/* ── XpBar ── */
+.xp { display:flex; flex-direction:column; gap:var(--s2); }
+.xp__head { display:flex; align-items:baseline; justify-content:space-between; gap:var(--s4); }
+.xp__level { font-family:var(--font-numeric); font-size:30px; line-height:1; }
+.xp__level small { font-family:var(--font-label); font-size:var(--fs-sm); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-700); margin-right:var(--s2); }
+.xp__total { font-family:var(--font-numeric); font-size:19px; color:var(--ink-700); }
+.xp__track { position:relative; height:26px; border:var(--b-heavy) solid var(--ink-900); background:var(--page-sunken); overflow:hidden; }
+.xp__fill { height:100%; background:var(--accent); border-right:var(--b-heavy) solid var(--ink-900); width:0; }
+.xp__fill--static { width:64%; }
+.xp__ticks { position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), var(--ink-100) calc(10% - 1px) 10%); }
+.xp__foot { display:flex; justify-content:space-between; font-size:var(--fs-sm); color:var(--ink-700); margin:0; }
+
+/* ── QuestCard ── */
+.quest { background:var(--page-raised); border:var(--b-heavy) solid var(--ink-900); box-shadow:var(--sh-md); padding:var(--card-padding); display:flex; flex-direction:column; gap:var(--s3); }
+.quest__top { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--s3); }
+.quest__title { font-size:var(--fs-lg); font-weight:600; line-height:1.3; margin:0; }
+.quest__skill { font-family:var(--font-label); font-size:var(--fs-sm); letter-spacing:.04em; color:var(--ink-700); margin:0; }
+.quest__skill b { color:var(--ink-900); font-weight:400; border-bottom:var(--b-line) solid var(--accent); }
+.quest__rationale { font-size:var(--fs-sm); color:var(--ink-700); line-height:1.7; margin:0; }
+.quest__foot { display:flex; align-items:center; justify-content:space-between; gap:var(--s3); border-top:var(--b-hair) solid var(--page-edge); padding-top:var(--s3); margin-top:var(--s1); }
+.quest__reward { font-family:var(--font-numeric); font-size:19px; }
+.quest__reward small { font-family:var(--font-label); font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.08em; color:var(--ink-700); margin-right:4px; }
+.quest__evidence { font-family:var(--font-label); text-transform:uppercase; letter-spacing:.06em; font-size:var(--fs-xs); padding:3px 9px; border:var(--b-line) solid var(--ink-900); }
+.ev-none { color:var(--ink-700); border-style:dashed; }
+.ev-have { background:var(--mana-full); color:var(--page-raised); border-color:var(--ink-900); }
+.quest--done { box-shadow:var(--sh-gold); }
+.quest--done .quest__title { text-decoration:line-through; text-decoration-thickness:2px; color:var(--ink-700); }
+
+/* stamp — press feedback is movement, not colour */
+.stampable { transition:transform var(--d-instant) var(--e-out); }
+.stampable:active { transform:var(--press); }
+
+/* ── Sigil ── */
+.sigil-box { display:flex; align-items:center; gap:var(--s6); flex-wrap:wrap; }
+.sigil { width:200px; height:200px; flex:none; }
+.sigil path, .sigil circle, .sigil line { vector-effect:non-scaling-stroke; }
+.sigil [data-draw] { stroke-dasharray:1; stroke-dashoffset:1; animation:inkdraw var(--d-cinematic) var(--e-ink) forwards; }
+@keyframes inkdraw { to { stroke-dashoffset:0; } }
+
+/* ── ChapterMap ── */
+.map { border:var(--b-slab) solid var(--ink-900); background:var(--page-raised); box-shadow:var(--sh-md); padding:var(--s5); overflow-x:auto; }
+.map svg { display:block; min-width:640px; }
+.node-label { font-family:var(--font-label); font-size:12px; letter-spacing:.04em; fill:var(--ink-900); }
+.node-sub { font-family:var(--font-body); font-size:11px; fill:var(--ink-700); }
+
+/* ── Hatch demo — decorative surfaces ONLY, never behind body text ── */
+.hatch {
+  border:var(--b-slab) solid var(--ink-900); box-shadow:var(--sh-md);
+  padding:var(--s6);
+  background-color:var(--page-raised);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Cpath d='M-2 2 L2 -2 M0 9 L9 0 M7 11 L11 7' stroke='%232A2419' stroke-width='1' stroke-opacity='0.28'/%3E%3C/svg%3E");
+}
+.hatch__title { font-family:var(--font-display); font-weight:800; font-size:var(--fs-2xl); margin:0; }
+.hatch__note { font-size:var(--fs-sm); color:var(--ink-700); margin:var(--s2) 0 0; max-width:52ch; background:var(--page-raised); border:var(--b-line) solid var(--ink-900); padding:var(--s2) var(--s3); }
+
+/* ── Presentation Mode explainer ── */
+.pm-demo { display:grid; grid-template-columns:1fr 1fr; gap:var(--s6); }
+@media (max-width:760px) { .pm-demo { grid-template-columns:1fr; } }
+.pm-card { border:var(--b-heavy) solid var(--ink-900); background:var(--page-raised); padding:var(--card-padding); box-shadow:var(--sh-sm); }
+.pm-card h4 { font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em; font-size:var(--fs-sm); color:var(--ink-700); margin:0 0 var(--s3); }
+.pm-card p { margin:0; font-size:var(--fs-sm); }
+
+/* ── Toggle buttons ── */
+.toggle {
+  font-family:var(--font-label); text-transform:uppercase; letter-spacing:.08em;
+  font-size:var(--fs-xs); padding:6px 12px;
+  background:var(--cover-700); color:var(--cover-fg);
+  border:var(--b-line) solid var(--cover-600); border-radius:var(--r-none);
+  cursor:pointer; transition:transform var(--d-instant) var(--e-out), background var(--d-fast) var(--e-out);
+}
+.toggle:hover { background:var(--cover-600); }
+.toggle:focus-visible { outline:var(--b-heavy) solid var(--gold-on-cover); outline-offset:2px; }
+.toggle:active { transform:var(--press); }
+.toggle[aria-pressed="true"] { background:var(--accent); border-color:var(--accent-deep); color:var(--page-raised); }
+
+/* ── Notes / banned list ── */
+.rule-list { list-style:none; padding:0; margin:0; max-width:var(--measure); }
+.rule-list li { padding:var(--s3) 0 var(--s3) var(--s6); border-bottom:var(--b-hair) solid var(--page-edge); position:relative; font-size:var(--fs-sm); }
+.rule-list li::before { content:"✕"; position:absolute; left:0; top:var(--s3); color:var(--mana-critical); font-weight:700; }
+.rule-list--do li::before { content:"✓"; color:var(--mana-full); }
+
+/* ── Footer ── */
+.colophon { border-top:var(--b-slab) solid var(--ink-900); padding-top:var(--s6); font-size:var(--fs-sm); color:var(--ink-700); }
+.colophon a { color:var(--accent-deep); }
+</style>
+</head>
+
+<body>
+
+<!-- Filter defs mount ONCE at app root. Duplicate IDs fail silently in Firefox.
+     Nothing here animates — displacement is for static decorative surfaces only. -->
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <defs>
+    <filter id="inkEdge" x="-8%" y="-8%" width="116%" height="116%" filterUnits="objectBoundingBox">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<header class="cover">
+  <p class="cover__logo">LifeOS</p>
+  <nav class="cover__nav" aria-label="Preview sections">
+    <a href="#colour">Colour</a>
+    <a href="#audit">Audit</a>
+    <a href="#type">Type</a>
+    <a href="#components">Components</a>
+    <a href="#rules">Rules</a>
+  </nav>
+  <span class="cover__spacer"></span>
+  <button class="toggle" id="btn-presentation" aria-pressed="false" title="Simulate the projector profile">Presentation&nbsp;Mode</button>
+  <button class="toggle" id="btn-motion" aria-pressed="false" title="Simulate prefers-reduced-motion">Motion&nbsp;Off</button>
+</header>
+
+<div class="wrap">
+
+  <section id="intro">
+    <div class="sec-head">
+      <h2>LifeOS · Design System</h2>
+      <h3>Grimoire</h3>
+    </div>
+    <p class="lede">
+      Shounen fantasy ink. Dark cover chrome, light parchment pages. This page is the
+      lock-in artefact for <b>Day&nbsp;1</b> — open it, look at it on the real projector,
+      and commit to the type stack. Every colour below is measured, not eyeballed.
+    </p>
+    <p>
+      The dark bands top and bottom are the <em>only</em> dark chrome in the system.
+      The readout in the bottom bar measures what share of the screen they actually
+      occupy — the hard ceiling is <code>&lt;= 15%</code>, because a lit-room projector
+      lifts black levels and crushes dark regions into a single muddy mass exactly when
+      the panel is looking at them.
+    </p>
+  </section>
+
+  <!-- ═══════════════ COLOUR ═══════════════ -->
+  <section id="colour">
+    <div class="sec-head">
+      <h2>01 — Palette</h2>
+      <h3>Two surfaces, one accent</h3>
+    </div>
+
+    <div class="swatch-group">
+      <p class="swatch-group__title">cover <span class="swatch-group__note">dark chrome — nav, HUD, status bar. Minority of screen area.</span></p>
+      <div class="swatches" data-swatch-group="cover"></div>
+    </div>
+
+    <div class="swatch-group">
+      <p class="swatch-group__title">page <span class="swatch-group__note">parchment — every reading surface. Never #FFFFFF.</span></p>
+      <div class="swatches" data-swatch-group="page"></div>
+    </div>
+
+    <div class="swatch-group">
+      <p class="swatch-group__title">ink <span class="swatch-group__note">ink on paper. The ratio shown is measured against page.base.</span></p>
+      <div class="swatches" data-swatch-group="ink"></div>
+    </div>
+
+    <div class="swatch-group">
+      <p class="swatch-group__title">accent · gold <span class="swatch-group__note">cinnabar seal red is the single accent. Gold is for reward moments only.</span></p>
+      <div class="swatches" data-swatch-group="accent"></div>
+      <div class="swatches" data-swatch-group="gold" style="margin-top:var(--s4)"></div>
+    </div>
+
+    <div class="swatch-group">
+      <p class="swatch-group__title">mana · difficulty · signal <span class="swatch-group__note">Mana snaps between three discrete steps — never a gradient, so the 70 threshold is visible as an event.</span></p>
+      <div class="swatches" data-swatch-group="mana"></div>
+      <div class="swatches" data-swatch-group="difficulty" style="margin-top:var(--s4)"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ AUDIT ═══════════════ -->
+  <section id="audit">
+    <div class="sec-head">
+      <h2>02 — Contrast Audit</h2>
+      <h3>Measured, not eyeballed</h3>
+    </div>
+    <p class="lede">
+      Computed live in this page against WCAG&nbsp;2.1 relative luminance. The target is
+      <b>AAA (7:1)</b>, not AA — a projector burns roughly half the contrast away, so a
+      7:1 pair lands near 4.5:1 on the wall and is still readable. A 4.5:1 pair does not.
+    </p>
+    <table class="audit">
+      <thead>
+        <tr><th>Pair</th><th>Sample</th><th>Ratio</th><th>Verdict</th><th>Permitted use</th></tr>
+      </thead>
+      <tbody id="audit-body"></tbody>
+    </table>
+    <p style="margin-top:var(--s5); font-size:var(--fs-sm); color:var(--ink-700)">
+      The <b>PROBE</b> and <b>REJECTED</b> rows are design options that were tried and
+      measured, kept here on purpose so the decisions can be re-checked rather than
+      re-argued. Two of them changed the system:
+    </p>
+    <ul style="font-size:var(--fs-sm); color:var(--ink-700); max-width:var(--measure)">
+      <li style="margin-bottom:var(--s3)">
+        <b>Dark text on the cinnabar accent fails at 2.58:1.</b> The intuitive choice —
+        a deep red fill with near-black text — is the one that does not work. Accent fills
+        carry <i>light</i> text, and <code>accent.deep</code> is the variant to reach for
+        when a filled element must clear 7:1.
+      </li>
+      <li>
+        <b>Only the boss chip can be filled.</b> Against light label text, easy, medium and
+        hard land at 5.24, 5.83 and 5.67 — AAA-large, none of them reaching 7:1. Boss plum
+        lands at 8.91:1 and clears AAA outright. So easy, medium and hard are outlined chips
+        with ink text at 12.69:1 and the hue carried by a 3px border and a marker square,
+        while boss is the one solid filled chip. Boss ends up different in <i>kind</i>, not
+        just in colour — which is what the design asked for in the first place.
+      </li>
+    </ul>
+  </section>
+
+  <!-- ═══════════════ TYPOGRAPHY ═══════════════ -->
+  <section id="type">
+    <div class="sec-head">
+      <h2>03 — Typography</h2>
+      <h3>Four roles, one hard rule</h3>
+    </div>
+    <p class="lede">
+      Blackletter display plus serif body drifts into “medieval D&amp;D template” fast. The
+      genre’s actual pattern is one decorated logo and clean type everywhere else — so
+      Grenze Gotisch appears in exactly three places and nowhere else.
+    </p>
+
+    <div class="type-role">
+      <div class="type-role__id"><b>Display</b>Grenze Gotisch</div>
+      <div>
+        <p class="spec-display">The Book Grows a New Page</p>
+        <p class="type-role__use type-role__use--hard">
+          <b>HARD RULE —</b> app logo, chapter titles, level-up moments. Nowhere else, ever.
+        </p>
+      </div>
+    </div>
+
+    <div class="type-role">
+      <div class="type-role__id"><b>Body</b>Literata</div>
+      <div>
+        <p class="spec-body">
+          You missed two scheduled Trials this week, so the system has drafted a lighter
+          plan rather than letting the streak break. <b>Nothing was deleted</b> — the
+          original nodes are still on the roadmap, and every XP entry that produced your
+          current level is still in the ledger. Read the rationale, then decide.
+        </p>
+        <p class="type-role__use">
+          Everything readable: quest rationale, evidence, diff, review. Commissioned for
+          Google Play Books to survive small sizes for hours — low stroke contrast, open
+          counters, large x-height. A working face, not a performing one.
+        </p>
+      </div>
+    </div>
+
+    <div class="type-role">
+      <div class="type-role__id"><b>Numeric</b>Anton</div>
+      <div>
+        <p class="spec-numeric">1,240 <span style="font-size:24px">XP</span> · 13 · 68</p>
+        <p class="type-role__use">
+          XP totals, level numbers, stamina values only. A poster face, kept because it is
+          utility — it makes numbers legible at 5 metres without pretending to be fantasy.
+        </p>
+      </div>
+    </div>
+
+    <div class="type-role">
+      <div class="type-role__id"><b>Label</b>Marcellus</div>
+      <div>
+        <p class="spec-label">Chapter II · The Index Beneath</p>
+        <p class="type-role__use">Section labels, rank names, stat captions, chips.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:var(--s6); font-size:var(--fs-sm); color:var(--ink-700)">
+      All four faces carry a <b>Vietnamese subset</b>. The UI is English, so that is not
+      about interface strings — it is so a goal typed as “trở thành backend developer”
+      renders as text instead of a row of <code>.notdef</code> boxes in front of the panel.
+    </p>
+  </section>
+
+  <!-- ═══════════════ COMPONENTS ═══════════════ -->
+  <section id="components">
+    <div class="sec-head">
+      <h2>04 — Components</h2>
+      <h3>Pure CSS and SVG</h3>
+    </div>
+    <p class="lede">
+      No image assets. Every surface here is borders, hard shadows, a static grain tile
+      and inline SVG — which is what makes the aesthetic reachable without an artist and
+      without licensing anything.
+    </p>
+
+    <p class="component-label">ManaBar — three threshold states</p>
+    <div class="grid-2" style="margin-bottom:var(--s7)">
+      <div class="mana mana--full">
+        <div class="mana__head"><span class="mana__label">Mana</span><span class="mana__value">92<small>/100</small></span></div>
+        <div class="mana__track" data-mana="92"></div>
+        <p class="mana__foot">Steady. Full recovery applies at rollover.</p>
+      </div>
+      <div class="mana mana--warn">
+        <div class="mana__head"><span class="mana__label">Mana</span><span class="mana__value">64<small>/100</small></span></div>
+        <div class="mana__track" data-mana="64"></div>
+        <p class="mana__foot">Below the 70 overload threshold (BR05). Adjustment may trigger.</p>
+      </div>
+      <div class="mana mana--critical">
+        <div class="mana__head"><span class="mana__label">Mana</span><span class="mana__value">28<small>/100</small></span></div>
+        <div class="mana__track" data-mana="28"></div>
+        <p class="mana__foot">Critical. Recovery Plan is capped at two light quests.</p>
+      </div>
+    </div>
+
+    <p class="component-label">XpBar &amp; Level</p>
+    <div class="grid-2" style="margin-bottom:var(--s7)">
+      <div class="xp">
+        <div class="xp__head">
+          <span class="xp__level"><small>Level</small>12</span>
+          <span class="xp__total">1,240 XP</span>
+        </div>
+        <div class="xp__track"><div class="xp__fill xp__fill--static"></div><div class="xp__ticks"></div></div>
+        <p class="xp__foot"><span>40 to next level</span><span>Apprentice Scribe</span></p>
+      </div>
+      <div class="xp">
+        <div class="xp__head">
+          <span class="xp__level"><small>Level</small>12</span>
+          <span class="xp__total">+30 XP</span>
+        </div>
+        <div class="xp__track"><div class="xp__fill" id="xp-demo"></div><div class="xp__ticks"></div></div>
+        <p class="xp__foot"><span>HARD Trial sealed — reward posted to the ledger</span></p>
+      </div>
+    </div>
+
+    <p class="component-label">QuestCard</p>
+    <div class="grid-2" style="margin-bottom:var(--s7)">
+      <article class="quest stampable">
+        <div class="quest__top">
+          <h4 class="quest__title">Wire pagination into the quest feed</h4>
+          <span class="chip chip--medium"><span class="chip__mark"></span>Medium</span>
+        </div>
+        <p class="quest__skill">Skill · <b>REST API Integration</b></p>
+        <p class="quest__rationale">
+          Your roadmap has listed cursor pagination as a gap for two chapters. The feed
+          endpoint currently returns every row — one real query on a real table, and the
+          difference is visible in the response shape.
+        </p>
+        <div class="quest__foot">
+          <span class="quest__reward"><small>Reward</small>20 XP</span>
+          <span class="quest__evidence ev-none">No evidence</span>
+        </div>
+      </article>
+
+      <article class="quest stampable quest--done">
+        <div class="quest__top">
+          <h4 class="quest__title">Explain the Node.js event loop</h4>
+          <span class="chip chip--easy"><span class="chip__mark"></span>Easy</span>
+        </div>
+        <p class="quest__skill">Skill · <b>Node.js Runtime</b></p>
+        <p class="quest__rationale">
+          Sealed. The written explanation is attached, and the XP it produced is already
+          in the ledger — immutable, keyed to this quest so it can never post twice.
+        </p>
+        <div class="quest__foot">
+          <span class="quest__reward"><small>Reward</small>10 XP</span>
+          <span class="quest__evidence ev-have">Evidence filed</span>
+        </div>
+      </article>
+
+      <article class="quest stampable">
+        <div class="quest__top">
+          <h4 class="quest__title">Chapter Boss — Ship the roadmap v2</h4>
+          <span class="chip chip--boss"><span class="chip__mark"></span>Boss</span>
+        </div>
+        <p class="quest__skill">Skill · <b>Roadmap Revision</b></p>
+        <p class="quest__rationale">
+          The whole chapter converges here: the grimoire grows a new page, and the diff
+          against v1 is the proof that the plan changed for a reason.
+        </p>
+        <div class="quest__foot">
+          <span class="quest__reward"><small>Reward</small>30 XP</span>
+          <span class="quest__evidence ev-none">No evidence</span>
+        </div>
+      </article>
+    </div>
+
+    <p class="component-label">PanelFrame — double rule and corner ticks</p>
+    <div class="grid-2" style="margin-bottom:var(--s7)">
+      <div class="panel panel--framed">
+        <h4 style="font-family:var(--font-display); font-weight:800; font-size:var(--fs-2xl); margin:0 0 var(--s3)">Chapter II</h4>
+        <p style="margin:0; font-size:var(--fs-sm); color:var(--ink-700)">
+          Framed parchment surface for hero and map panels. The frame is four borders and
+          a set of corner ticks — no border image, no asset.
+        </p>
+      </div>
+      <div class="panel panel--dark panel--framed">
+        <p class="component-label" style="color:var(--cover-fg)">Game Master</p>
+        <p style="margin:0; font-size:var(--fs-lg); line-height:1.5; color:var(--cover-fg)">
+          “Two Trials went unanswered. I have redrawn the week — lighter, not shorter.
+          Nothing has been struck from the book.”
+        </p>
+      </div>
+    </div>
+
+    <p class="component-label">Sigil — deterministic, grows a branch on level-up</p>
+    <div class="panel" style="margin-bottom:var(--s7)">
+      <div class="sigil-box">
+        <div id="sigil-host" class="sigil"></div>
+        <div>
+          <p style="margin:0 0 var(--s3); font-size:var(--fs-sm); color:var(--ink-700); max-width:44ch">
+            Generated from the goal, domain and level — the same input always draws the
+            same sigil. No artist, no character illustration, and it is the only element
+            in the system allowed to feel personal.
+          </p>
+          <div class="row">
+            <button class="toggle" id="btn-sigil-up">Level +1 — grow a branch</button>
+            <button class="toggle" id="btn-sigil-redraw">Redraw ink</button>
+          </div>
+          <p style="margin:var(--s3) 0 0; font-family:var(--font-label); font-size:var(--fs-sm); color:var(--ink-700)">
+            Level <span id="sigil-level" style="font-family:var(--font-numeric); font-size:17px; color:var(--ink-900)">4</span>
+            · branches <span id="sigil-branches" style="font-family:var(--font-numeric); font-size:17px; color:var(--ink-900)">9</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <p class="component-label">ChapterMap — layout derived from order_no, not a graph library</p>
+    <div class="map" style="margin-bottom:var(--s7)">
+      <svg viewBox="0 0 760 200" role="img" aria-label="Chapter map with four node states">
+        <path d="M60 150 C 160 150, 180 60, 280 60 S 400 150, 480 150 S 600 70, 700 70"
+              fill="none" stroke="#2A2419" stroke-width="3" stroke-dasharray="10 7" opacity="0.55"/>
+        <!-- locked -->
+        <g transform="translate(60,150)">
+          <circle r="19" fill="#F6F0DE" stroke="#9A8C6E" stroke-width="2" stroke-dasharray="5 4"/>
+          <text class="node-label" text-anchor="middle" y="4">I</text>
+          <text class="node-sub" text-anchor="middle" y="38">Locked</text>
+        </g>
+        <!-- cleared -->
+        <g transform="translate(280,60)">
+          <circle r="21" fill="#3F6B45" stroke="#2A2419" stroke-width="3"/>
+          <text class="node-label" fill="#F6F0DE" text-anchor="middle" y="5">II</text>
+          <text class="node-sub" text-anchor="middle" y="40">Cleared</text>
+        </g>
+        <!-- open -->
+        <g transform="translate(480,150)">
+          <circle r="23" fill="#F6F0DE" stroke="#2A2419" stroke-width="4"/>
+          <circle r="30" fill="none" stroke="#B23A1F" stroke-width="2" opacity="0.6"/>
+          <text class="node-label" text-anchor="middle" y="6">III</text>
+          <text class="node-sub" text-anchor="middle" y="44">Open</text>
+        </g>
+        <!-- boss — the single deliberate grid break per chapter -->
+        <g transform="translate(700,58)">
+          <rect x="-30" y="-30" width="60" height="60" fill="#6B2B4A" stroke="#2A2419" stroke-width="4"/>
+          <text class="node-label" fill="#F6F0DE" text-anchor="middle" y="6" style="font-size:15px">IV</text>
+          <text class="node-sub" text-anchor="middle" y="46">Chapter Boss</text>
+        </g>
+      </svg>
+    </div>
+
+    <p class="component-label">Hatching — decorative surfaces only</p>
+    <div class="hatch" style="margin-bottom:var(--s7)">
+      <h4 class="hatch__title">The map room</h4>
+      <p class="hatch__note">
+        Diagonal hatch is the genre’s shading grammar, and it lives only on large
+        decorative panels. Behind body copy it collapses into a grey smear at projection
+        distance — which is why the note you are reading sits on a solid parchment plate.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ PRESENTATION MODE ═══════════════ -->
+  <section id="presentation">
+    <div class="sec-head">
+      <h2>05 — Presentation Mode</h2>
+      <h3>The highest-leverage feature here</h3>
+    </div>
+    <p class="lede">
+      The button in the top bar sets one attribute on <code>&lt;html&gt;</code>. That single
+      attribute multiplies the type scale by 1.4, drops the grain overlay and switches off
+      every animation. It is the difference between hoping the projector is bright enough
+      and knowing the text is readable.
+    </p>
+    <div class="pm-demo">
+      <div class="pm-card">
+        <h4>Toggled on</h4>
+        <p>Body copy goes 17px → ~24px, which is the projector floor for content that has to be read from three metres. Grain is removed — at 4% opacity nobody in the room can see it, and it is the most expensive effect in the system.</p>
+      </div>
+      <div class="pm-card">
+        <h4>Also wired to</h4>
+        <p><code>prefers-reduced-motion</code> and <code>prefers-contrast: more</code>. Users who need it get it without pressing anything, and the Motion&nbsp;Off button in the bar lets you rehearse that state before the demo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ RULES ═══════════════ -->
+  <section id="rules">
+    <div class="sec-head">
+      <h2>06 — Rules</h2>
+      <h3>What this system forbids</h3>
+    </div>
+    <div class="grid-2">
+      <div>
+        <p class="component-label">Never</p>
+        <ul class="rule-list">
+          <li><code>#FFFFFF</code> as a content surface — glare in the dark, halation on the projector</li>
+          <li>Soft or blurred shadows. Every shadow is a hard offset, 0 blur, integer pixels</li>
+          <li>Uniform border-radius across components</li>
+          <li>Grenze Gotisch outside the logo, chapter titles and level-up</li>
+          <li>A live <code>feTurbulence</code> filter anywhere</li>
+          <li>Fine crosshatch behind body text</li>
+          <li>Mana rendered as a gradient — it must snap at the threshold</li>
+          <li>Hardcoded colours. Everything routes through a token</li>
+        </ul>
+      </div>
+      <div>
+        <p class="component-label">Always</p>
+        <ul class="rule-list rule-list--do">
+          <li>Body text at ink.900 or ink.700 — both measured AAA against the page</li>
+          <li>Semantic strokes at 2px minimum, 3px preferred</li>
+          <li>Press feedback as movement into the shadow, not a colour change</li>
+          <li>Dark chrome under 15% of screen area</li>
+          <li>Loading, empty and error states drawn by hand, not library defaults</li>
+          <li>Accent fills carrying <b>light</b> text — never dark</li>
+          <li>Easy / medium / hard as outlined chips with ink text; boss as the one filled chip</li>
+          <li>Cover chrome text at cover.fg (13.96:1), not fgMuted, below 18px</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="colophon">
+    <p>
+      Generated as the Day 1 lock-in artefact. Tokens in <code>design/design-tokens.json</code>,
+      rationale in <code>DESIGN.md</code>, constraints in <code>SPEC.md §5.4</code>.
+      Typefaces are Grenze Gotisch, Literata, Anton and Marcellus (all SIL Open Font License,
+      served from Google Fonts). Icons, when added, come from game-icons.net under CC BY 3.0.
+    </p>
+  </div>
+</div>
+
+<footer class="statusbar">
+  <span class="statusbar__stat"><span class="statusbar__num">12</span><span class="statusbar__label">Level</span></span>
+  <span class="statusbar__stat"><span class="statusbar__num">1,240</span><span class="statusbar__label">XP</span></span>
+  <span class="statusbar__stat"><span class="statusbar__num">92</span><span class="statusbar__label">Mana</span></span>
+  <span class="statusbar__stat"><span class="statusbar__num">3</span><span class="statusbar__label">Trials today</span></span>
+  <span class="statusbar__ratio">
+    Dark chrome <b id="dark-ratio">—</b> of viewport · ceiling <b>15%</b>
+  </span>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   1. Contrast audit — WCAG 2.1 relative luminance
+   ═══════════════════════════════════════════════════════════════════ */
+const TOKENS = {
+  cover: { '900':'#16130D','800':'#211C14','700':'#2E2718','600':'#3D3421',fg:'#E8DFC8',fgMuted:'#A99C7E' },
+  page:  { base:'#F1E9D2',raised:'#F6F0DE',sunken:'#E8DFC4',edge:'#DCD2B4' },
+  ink:   { '900':'#2A2419','700':'#4A4030','500':'#6B5E45','300':'#9A8C6E','100':'#C4B896' },
+  accent:{ base:'#B23A1F',deep:'#8A2B14',soft:'#E8C9BC' },
+  gold:  { onPage:'#634808',onCover:'#D4A72C' },
+  mana:  { full:'#3F6B45',warn:'#7E540F',critical:'#9E2B25' },
+  difficulty: { easy:'#4A6B52',medium:'#7E540F',hard:'#A63A22',boss:'#6B2B4A' },
+  signal:{ success:'#3F6B45',warning:'#9A6B1E',danger:'#9E2B25',info:'#3A5A72' },
+  /* Presentation Mode's two contrast overrides — the same values
+     design-tokens.json holds and scripts/tokens-to-css.mjs emits into
+     src/styles/tokens.css. They are copied here so this table MEASURES them;
+     the three audit rows that use them are the only place the claim is checked,
+     and a value edited in one file without the other fails visibly right there
+     instead of quietly certifying itself. */
+  presentation:{ ink500:'#4A4030', coverFgMuted:'#BCAD8C' }
+};
+
+function hexToRgb(hex) {
+  const h = hex.replace('#','');
+  return [0,2,4].map(i => parseInt(h.slice(i, i+2), 16));
+}
+function relLuminance(hex) {
+  const [r,g,b] = hexToRgb(hex).map(v => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126*r + 0.7152*g + 0.0722*b;
+}
+function contrast(a, b) {
+  const la = relLuminance(a), lb = relLuminance(b);
+  const [hi, lo] = la > lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/* Pairs that actually occur in the UI. `expect` records the design intent:
+   'text'   → must reach AAA 7:1 (projector budget)
+   'large'  → AAA large is 4.5:1; acceptable for 24px+ / 19px bold only
+   'deco'   → decoration; never text. Listed so the failure is documented.
+   'probe'  → a rejected option, kept to justify the decision that replaced it. */
+const AUDIT = [
+  { label:'ink.900 on page.base', fg:TOKENS.ink['900'], bg:TOKENS.page.base, expect:'text',  use:'Body, headings — the primary reading pair' },
+  { label:'ink.700 on page.base', fg:TOKENS.ink['700'], bg:TOKENS.page.base, expect:'text',  use:'Secondary body, rationale, captions' },
+  { label:'ink.900 on page.raised', fg:TOKENS.ink['900'], bg:TOKENS.page.raised, expect:'text', use:'Body inside cards' },
+  { label:'ink.500 on page.base', fg:TOKENS.ink['500'], bg:TOKENS.page.base, expect:'large', use:'18px+ or non-essential only — never dense copy' },
+  { label:'ink.300 on page.base', fg:TOKENS.ink['300'], bg:TOKENS.page.base, expect:'deco',  use:'DECORATION ONLY — never text' },
+  { label:'ink.100 on page.base', fg:TOKENS.ink['100'], bg:TOKENS.page.base, expect:'deco',  use:'Dividers, borders, disabled fills only' },
+  { label:'ink.500 (Presentation) on page.base', fg:TOKENS.presentation.ink500, bg:TOKENS.page.base, expect:'text', use:'Presentation Mode promotes the 18px+ rung. It has to clear AAA rather than lean on the large-text allowance, because 13px × 1.4 = 18.2px is still NOT WCAG-large.' },
+  { label:'ink.500 (Presentation) on page.sunken', fg:TOKENS.presentation.ink500, bg:TOKENS.page.sunken, expect:'text', use:'The BINDING surface — the darkest parchment that carries text — so the override is sized against this row and not the one above it.' },
+  { label:'cover.fgMuted (Presentation) on cover.900', fg:TOKENS.presentation.coverFgMuted, bg:TOKENS.cover['900'], expect:'text', use:'Nav labels and status readouts sit below the 18px floor, so in this mode the chrome rung must reach AAA rather than 4.5:1.' },
+  { label:'cover.fg on cover.900', fg:TOKENS.cover.fg, bg:TOKENS.cover['900'], expect:'text', use:'Nav and status bar text' },
+  { label:'cover.fgMuted on cover.900', fg:TOKENS.cover.fgMuted, bg:TOKENS.cover['900'], expect:'large', use:'Non-essential chrome only — dev readouts, disabled. NOT for nav labels.' },
+  { label:'accent on page.base', fg:TOKENS.accent.base, bg:TOKENS.page.base, expect:'large', use:'Accent TEXT is allowed only at 24px+; prefer it as a fill' },
+  { label:'page.raised on accent (fill)', fg:TOKENS.page.raised, bg:TOKENS.accent.base, expect:'large', use:'The sanctioned accent fill — LIGHT text on cinnabar' },
+  { label:'page.raised on accent.deep (fill)', fg:TOKENS.page.raised, bg:TOKENS.accent.deep, expect:'text', use:'Use this when a filled accent element must reach AAA' },
+  { label:'gold.onPage on page.base', fg:TOKENS.gold.onPage, bg:TOKENS.page.base, expect:'text', use:'Reward figures. Gold had to go dark to clear AAA on parchment.' },
+  { label:'gold.onCover on cover.700', fg:TOKENS.gold.onCover, bg:TOKENS.cover['700'], expect:'large', use:'Reward moments — use cover.800/900 for the full 7:1' },
+  { label:'mana.full on page.base', fg:TOKENS.mana.full, bg:TOKENS.page.base, expect:'large', use:'Mana fill / large figure' },
+  { label:'mana.warn on page.base', fg:TOKENS.mana.warn, bg:TOKENS.page.base, expect:'large', use:'Mana fill / large figure' },
+  { label:'mana.critical on page.base', fg:TOKENS.mana.critical, bg:TOKENS.page.base, expect:'large', use:'Mana fill / large figure' },
+  { label:'diff.easy on page.base', fg:TOKENS.difficulty.easy, bg:TOKENS.page.base, expect:'large', use:'Chip border and marker only' },
+  { label:'diff.medium on page.base', fg:TOKENS.difficulty.medium, bg:TOKENS.page.base, expect:'large', use:'Chip border and marker only' },
+  { label:'diff.hard on page.base', fg:TOKENS.difficulty.hard, bg:TOKENS.page.base, expect:'large', use:'Chip border and marker only' },
+  { label:'diff.boss on page.base', fg:TOKENS.difficulty.boss, bg:TOKENS.page.base, expect:'large', use:'Chip border and marker only' },
+  { label:'PROBE — page.raised on diff.easy', fg:TOKENS.page.raised, bg:TOKENS.difficulty.easy, expect:'text', use:'A filled “easy” chip. Lands at AAA-large only, so easy stays outlined.' },
+  { label:'PROBE — page.raised on diff.medium', fg:TOKENS.page.raised, bg:TOKENS.difficulty.medium, expect:'text', use:'A filled “medium” chip. Fails — medium stays outlined.' },
+  { label:'PROBE — page.raised on diff.hard', fg:TOKENS.page.raised, bg:TOKENS.difficulty.hard, expect:'text', use:'A filled “hard” chip. AAA-large only — hard stays outlined.' },
+  { label:'page.raised on diff.boss', fg:TOKENS.page.raised, bg:TOKENS.difficulty.boss, expect:'text', use:'The ONE filled chip. Clears AAA, so boss is filled — different in kind, not just hue.' },
+  { label:'REJECTED — ink.900 on accent', fg:TOKENS.ink['900'], bg:TOKENS.accent.base, expect:'text', use:'Dark text on cinnabar. The intuitive choice, and it is unreadable.' },
+  { label:'REJECTED — gold.onCover on diff.boss', fg:TOKENS.gold.onCover, bg:TOKENS.difficulty.boss, expect:'text', use:'The tempting boss treatment. Worse than plain light text.' }
+];
+
+function verdict(ratio, expect) {
+  if (expect === 'deco') return { cls:'v-fail', text:'Decoration only' };
+  if (expect === 'text') {
+    if (ratio >= 7)    return { cls:'v-pass', text:'AAA' };
+    if (ratio >= 4.5)  return { cls:'v-warn', text:'AA only — fails target' };
+    return { cls:'v-fail', text:'Fails' };
+  }
+  if (ratio >= 7)   return { cls:'v-pass', text:'AAA' };
+  if (ratio >= 4.5) return { cls:'v-pass', text:'AAA large' };
+  if (ratio >= 3)   return { cls:'v-warn', text:'AA large only' };
+  return { cls:'v-fail', text:'Fails' };
+}
+
+(function renderAudit() {
+  const body = document.getElementById('audit-body');
+  body.innerHTML = AUDIT.map(row => {
+    const ratio = contrast(row.fg, row.bg);
+    const v = verdict(ratio, row.expect);
+    const isRejected = row.label.startsWith('REJECTED');
+    const isProbe = row.label.startsWith('PROBE');
+    const failed = (v.cls === 'v-fail' && row.expect !== 'deco') || isRejected;
+    const cls = failed ? ' class="is-fail"' : (v.cls === 'v-warn' || row.expect === 'deco' ? ' class="is-note"' : '');
+    const short = row.label.replace(/^(REJECTED|PROBE) — /,'');
+    const tag = isRejected ? '<b>' + short + '</b>' : isProbe ? '<i>' + short + '</i>' : short;
+    return `<tr${cls}>
+      <td>${tag}</td>
+      <td><span class="audit__sample" style="color:${row.fg};background:${row.bg}">Aa 17px</span></td>
+      <td class="audit__ratio">${ratio.toFixed(2)}:1</td>
+      <td class="audit__verdict ${v.cls}">${v.text}</td>
+      <td style="color:var(--ink-700)">${row.use}</td>
+    </tr>`;
+  }).join('');
+})();
+
+/* ═══════════════════════════════════════════════════════════════════
+   2. Swatch grids — every chip annotated with its measured ratio
+   ═══════════════════════════════════════════════════════════════════ */
+const SWATCH_SETS = {
+  cover: { bg:TOKENS.page.base, keys:['900','800','700','600','fg','fgMuted'] },
+  page:  { bg:TOKENS.ink['900'], keys:['base','raised','sunken','edge'] },
+  ink:   { bg:TOKENS.page.base, keys:['900','700','500','300','100'] },
+  accent:{ bg:TOKENS.page.base, keys:['base','deep','soft'] },
+  gold:  { bg:TOKENS.cover['700'], keys:['onPage','onCover'] },
+  mana:  { bg:TOKENS.page.base, keys:['full','warn','critical'] },
+  difficulty: { bg:TOKENS.page.base, keys:['easy','medium','hard','boss'] }
+};
+
+function ratioClass(r) { return r >= 7 ? 'r-aaa' : r >= 4.5 ? 'r-aa' : 'r-bad'; }
+function ratioNote(r)  { return r >= 7 ? 'AAA text' : r >= 4.5 ? 'AAA large only' : r >= 3 ? 'AA large only' : 'not for text'; }
+
+document.querySelectorAll('[data-swatch-group]').forEach(host => {
+  const set = SWATCH_SETS[host.dataset.swatchGroup];
+  if (!set) return;
+  host.innerHTML = set.keys.map(k => {
+    const hex = TOKENS[host.dataset.swatchGroup][k];
+    const r = contrast(hex, set.bg);
+    return `<div class="swatch">
+      <div class="swatch__chip" style="background:${hex}"></div>
+      <div class="swatch__meta">
+        <span class="swatch__name">${k}</span>
+        <span class="swatch__hex">${hex}</span>
+        <span class="swatch__ratio ${ratioClass(r)}">${r.toFixed(2)}:1</span>
+        <span class="swatch__tag">${ratioNote(r)}</span>
+      </div>
+    </div>`;
+  }).join('');
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   3. ManaBar segments
+   ═══════════════════════════════════════════════════════════════════ */
+document.querySelectorAll('[data-mana]').forEach(track => {
+  const value = Number(track.dataset.mana);
+  const filled = Math.round(value / 5);           // 20 cells, 5 points each
+  track.innerHTML = Array.from({ length: 20 }, (_, i) =>
+    `<div class="mana__cell${i < filled ? ' is-on' : ''}"></div>`).join('');
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   4. Sigil — deterministic SVG from a seed, branches grow with level
+   ═══════════════════════════════════════════════════════════════════ */
+function hashString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const SIGIL_SEED = 'lifeos|backend-developer|core';
+const INK = '#2A2419';
+const ACCENT = '#B23A1F';
+
+function buildSigil(level) {
+  const rand = mulberry32(hashString(SIGIL_SEED + '|L' + level));
+  const cx = 100, cy = 100;
+  const branches = 5 + level;                       // grows one branch per level
+  const parts = [];
+
+  // outer rings — one per 3 levels, capped
+  const rings = Math.min(3, Math.floor(level / 3));
+  for (let i = 0; i < rings; i++) {
+    const r = 92 - i * 9;
+    parts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${INK}"
+      stroke-width="${i === 0 ? 3 : 1.5}" opacity="${i === 0 ? 1 : 0.45}" data-draw pathLength="1"/>`);
+  }
+
+  // radial branches with sub-branches
+  for (let i = 0; i < branches; i++) {
+    const base = (i / branches) * Math.PI * 2;
+    const jitter = (rand() - 0.5) * 0.22;
+    const a = base + jitter;
+    const inner = 22 + rand() * 10;
+    const outer = 62 + rand() * 24;
+    const bow = (rand() - 0.5) * 26;                // curvature of the branch
+    const x1 = cx + Math.cos(a) * inner, y1 = cy + Math.sin(a) * inner;
+    const x2 = cx + Math.cos(a) * outer, y2 = cy + Math.sin(a) * outer;
+    const mx = (x1 + x2) / 2 + Math.cos(a + Math.PI / 2) * bow;
+    const my = (y1 + y2) / 2 + Math.sin(a + Math.PI / 2) * bow;
+
+    parts.push(`<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}"
+      fill="none" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" data-draw pathLength="1"/>`);
+
+    // sub-branch at roughly 60% out, alternating side
+    if (rand() > 0.25) {
+      const t = 0.58;
+      const sx = (1-t)*(1-t)*x1 + 2*(1-t)*t*mx + t*t*x2;
+      const sy = (1-t)*(1-t)*y1 + 2*(1-t)*t*my + t*t*y2;
+      const side = rand() > 0.5 ? 1 : -1;
+      const sa = a + side * (0.55 + rand() * 0.35);
+      const sl = 12 + rand() * 16;
+      parts.push(`<path d="M${sx.toFixed(1)} ${sy.toFixed(1)} L${(sx + Math.cos(sa)*sl).toFixed(1)} ${(sy + Math.sin(sa)*sl).toFixed(1)}"
+        fill="none" stroke="${INK}" stroke-width="1.5" stroke-linecap="round" opacity="0.85" data-draw pathLength="1"/>`);
+    }
+  }
+
+  // centre mark — a rotated square, one vertex per 4 levels
+  const rot = (level % 4) * 22.5;
+  parts.push(`<rect x="${cx - 13}" y="${cy - 13}" width="26" height="26"
+    transform="rotate(${rot} ${cx} ${cy})" fill="${ACCENT}" stroke="${INK}" stroke-width="3"/>`);
+  parts.push(`<circle cx="${cx}" cy="${cy}" r="4.5" fill="${INK}"/>`);
+
+  return `<svg viewBox="0 0 200 200" width="100%" height="100%" role="img"
+    aria-label="Personal sigil, level ${level}, ${branches} branches">
+    ${parts.join('\n')}
+  </svg>`;
+}
+
+let sigilLevel = 4;
+function renderSigil() {
+  const host = document.getElementById('sigil-host');
+  host.innerHTML = buildSigil(sigilLevel);
+  document.getElementById('sigil-level').textContent = sigilLevel;
+  document.getElementById('sigil-branches').textContent = 5 + sigilLevel;
+}
+renderSigil();
+
+document.getElementById('btn-sigil-up').addEventListener('click', () => {
+  sigilLevel = sigilLevel >= 20 ? 4 : sigilLevel + 1;
+  renderSigil();
+});
+document.getElementById('btn-sigil-redraw').addEventListener('click', () => {
+  const host = document.getElementById('sigil-host');
+  const svg = host.querySelector('svg');
+  host.innerHTML = '';
+  void host.offsetWidth;                            // force reflow so the animation restarts
+  host.innerHTML = buildSigil(sigilLevel);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   5. Demo animations
+   ═══════════════════════════════════════════════════════════════════ */
+(function xpOvershoot() {
+  const fill = document.getElementById('xp-demo');
+  if (!fill) return;
+  let t = 0;
+  setInterval(() => {
+    t = t > 1 ? 0 : t + 0.02;
+    // overshoot then settle — the spring feel, in plain CSS width terms
+    const eased = 1 - Math.pow(1 - Math.min(t, 1), 3);
+    const overshoot = t > 0.85 ? Math.sin((t - 0.85) * 20) * 0.03 : 0;
+    fill.style.width = Math.max(0, Math.min(1, eased + overshoot)) * 64 + '%';
+  }, 60);
+})();
+
+/* ═══════════════════════════════════════════════════════════════════
+   6. Header toggles + dark-area readout
+   ═══════════════════════════════════════════════════════════════════ */
+const root = document.documentElement;
+const btnPresentation = document.getElementById('btn-presentation');
+const btnMotion = document.getElementById('btn-motion');
+
+btnPresentation.addEventListener('click', () => {
+  const on = root.dataset.presentation !== 'true';
+  root.dataset.presentation = String(on);
+  btnPresentation.setAttribute('aria-pressed', String(on));
+});
+btnMotion.addEventListener('click', () => {
+  const off = root.dataset.motion !== 'off';
+  root.dataset.motion = off ? 'off' : 'on';
+  btnMotion.setAttribute('aria-pressed', String(off));
+});
+
+function updateDarkRatio() {
+  const cover = 56, status = 40;
+  const pct = ((cover + status) / window.innerHeight) * 100;
+  const el = document.getElementById('dark-ratio');
+  el.textContent = pct.toFixed(1) + '%';
+  el.style.color = pct <= 15 ? '#7FC08A' : '#E8A0A0';
+}
+window.addEventListener('resize', updateDarkRatio);
+updateDarkRatio();
+
+/* Smooth scroll for the nav */
+document.querySelectorAll('.cover__nav a').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (!target) return;
+    e.preventDefault();
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>

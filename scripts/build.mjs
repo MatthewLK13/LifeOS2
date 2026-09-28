@@ -1,0 +1,11 @@
+import {cp,mkdir,readFile,writeFile} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+import {execFileSync} from 'node:child_process';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+for(const file of ['app','pages','companion','graph','ui','data','state','curriculum','breadth','pathways'])execFileSync(process.execPath,['--check',path.join(root,'src',`${file}.js`)]);
+const output=path.join(root,'dist');await mkdir(output,{recursive:true});
+for(const file of ['index.html','src','assets'])await cp(path.join(root,file),path.join(output,file),{recursive:true});
+await writeFile(path.join(output,'build-info.json'),JSON.stringify({name:'LifeOS Grimoire Demo',builtAt:new Date().toISOString(),mode:'static'},null,2));
+const html=await readFile(path.join(output,'index.html'),'utf8');if(!html.includes('/src/app.js'))throw new Error('Missing application entry point');
+console.log('Build complete: dist/ · Static, dependency-free demo. Serve this directory at the root of a local HTTP server.');
