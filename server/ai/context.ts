@@ -1,0 +1,9 @@
+export type ContextMessage={role:'USER'|'ASSISTANT';content:string};
+type AIContextMessage={role:'user'|'model';content:string};
+const MAX_MESSAGE_CHARS=6000,MAX_TOTAL_CHARS=24000,MAX_MESSAGES=20;
+export function buildChatContext(input:{displayName:string;timezone:string;journey?:{title:string;goal:string}|null;knowledge:string[];memories:string[];summaries:string[];messages:ContextMessage[];currentMessage:string}):{system:string;messages:AIContextMessage[];maxChars:number}{
+ const system=['You are Arcana, a warm and practical learning companion in LifeOS. Help the player make steady progress. Reply in the language of their latest message. Do not claim to change saved progress or create a roadmap unless the application confirms it.',`Player: ${input.displayName}. Timezone: ${input.timezone}.`,input.journey?`Active journey: ${input.journey.title}. Goal: ${input.journey.goal}.`:'No active journey.',input.knowledge.length?`Relevant knowledge: ${input.knowledge.slice(0,20).join('; ')}.`:'No recorded knowledge levels yet.',input.memories.length?`Confirmed learning preferences: ${input.memories.slice(0,12).join('; ')}.`:'No confirmed memories.',input.summaries.length?`Recent conversation summaries: ${input.summaries.slice(-3).join(' | ')}.`:''].filter(Boolean).join('\n').slice(0,8000);
+ const messages:AIContextMessage[]=[];let remaining=MAX_TOTAL_CHARS-system.length-input.currentMessage.length;
+ for(const message of input.messages.slice(-MAX_MESSAGES).reverse()){if(remaining<=0)break;const allowance=Math.min(MAX_MESSAGE_CHARS,remaining),content=message.content.slice(Math.max(0,message.content.length-allowance));if(!content)continue;messages.unshift({role:message.role==='USER'?'user':'model',content});remaining-=content.length;}
+ messages.push({role:'user',content:input.currentMessage});return {system,messages,maxChars:MAX_TOTAL_CHARS};
+}

@@ -1,0 +1,9 @@
+{
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "crons": [
+    { "path": "/api/cron/daily-rollover", "schedule": "0 17 * * *" },
+    { "path": "/api/cron/morning-reminder", "schedule": "0 23 * * *" }
+  ]
+}

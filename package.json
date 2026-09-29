@@ -6,8 +6,35 @@
   "scripts": {
     "start": "node server.mjs",
     "dev": "node server.mjs",
-    "test": "node --test tests/*.test.mjs",
+    "dev:api": "node --watch --experimental-strip-types server/index.ts",
+    "api": "node --experimental-strip-types server/index.ts",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "node scripts/drizzle-kit.cjs generate",
+    "db:migrate": "node --experimental-strip-types server/db/migrate.ts",
+    "db:seed": "node --experimental-strip-types server/db/run-seed.ts",
+    "test": "node --experimental-strip-types --test tests/**/*.test.mjs",
     "build": "node scripts/build.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=22.6"
+  },
+  "packageManager": "pnpm@11.19.0",
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@neondatabase/serverless": "^1.1.0",
+    "dotenv": "^18.0.4",
+    "drizzle-orm": "^0.45.3",
+    "hono": "^4.13.9",
+    "web-push": "^3.6.7",
+    "ws": "^8.22.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@types/node": "^26.6.3",
+    "@types/web-push": "^3.6.4",
+    "@types/ws": "^8.18.1",
+    "drizzle-kit": "^0.31.11",
+    "typescript": "^7.0.2"
+  }
 }

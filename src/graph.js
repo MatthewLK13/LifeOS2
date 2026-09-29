@@ -4,40 +4,45 @@ import {CROSS_LINKS} from './breadth.js';
 import {chapterPath} from './pathways.js';
 function edge(x1,y1,x2,y2,color,dashed=false){return `<path d="M${x1} ${y1} C${x1} ${(y1+y2)/2},${x2} ${(y1+y2)/2},${x2} ${y2}" stroke="${color}" stroke-width="2.4" fill="none" ${dashed?'stroke-dasharray="6 7"':''}/>`;}
 function node({x,y,id,title,subtitle,symbol,color,selected=false,action='concept',kind=''}){return `<button class="graph-node ${selected?'selected':''} ${kind}" data-action="${action}" data-id="${esc(id)}" style="left:${x}px;top:${y}px;--node-color:${color}" aria-label="${esc(title)}${subtitle?`: ${esc(subtitle)}`:''}"><span class="node-orb">${icon(symbol)}<span class="orb-spark">✦</span></span><strong>${esc(title)}</strong><span class="node-caption">${esc(subtitle||'')}</span></button>`;}
-export function knowledgeGraph(concepts,{track='all',search='',filter='all',selected='',page=0}){
+export function knowledgeGraph(concepts,{track='all',search='',filter='all',selected='',page=0,domains=TRACKS.map(t=>({id:t.id,name:t.name,color:t.color,icon:t.icon,modules:t.modules,concepts:t.concepts}))}){
   let edges='',nodes='';const matches=concepts.filter(c=>(track==='all'||c.trackId===track)&&(filter==='all'||c.status===filter)&&c.name.toLowerCase().includes(search.toLowerCase()));
   if(!matches.length)return '<div class="empty-state"><h3>No concepts found</h3><p>Try another search or clear your filters.</p></div>';
   if(track==='all'&&!search&&filter==='all'){
     const positions=new Map();
-    TRACKS.forEach((t,i)=>{
-      const a=-Math.PI/2+i*2*Math.PI/TRACKS.length,x=1200+850*Math.cos(a),y=1020+680*Math.sin(a);positions.set(t.id,[x,y]);
-      edges+=edge(1200,1050,x,y+40,t.color);
-      nodes+=node({x,y,id:t.id,title:t.name,subtitle:t.concepts.length+' concepts',symbol:t.icon,color:t.color,action:'branch',kind:'branch-node atlas-branch'});
-      concepts.filter(c=>c.trackId===t.id).slice(0,3).forEach((c,k)=>{
+    domains.forEach((domain,i)=>{
+      const members=concepts.filter(c=>c.trackId===domain.id),a=-Math.PI/2+i*2*Math.PI/domains.length,x=1200+850*Math.cos(a),y=1020+680*Math.sin(a);positions.set(domain.id,[x,y]);
+      edges+=edge(1200,1050,x,y+40,domain.color);
+      nodes+=node({x,y,id:domain.id,title:domain.name,subtitle:members.length+' concepts',symbol:domain.icon||'tree',color:domain.color,action:'branch',kind:'branch-node atlas-branch'});
+      members.slice(0,3).forEach((c,k)=>{
         const b=a+(k-1)*.085,lx=1200+1090*Math.cos(b),ly=1020+900*Math.sin(b);
-        edges+=edge(x,y+40,lx,ly+40,t.color,true);
-        nodes+=node({x:lx,y:ly,id:c.id,title:c.name,subtitle:'Explore concept',symbol:'leaf',color:t.color,selected:selected===c.id,kind:'atlas-leaf'});
+        edges+=edge(x,y+40,lx,ly+40,domain.color,true);
+        nodes+=node({x:lx,y:ly,id:c.id,title:c.name,subtitle:'Explore concept',symbol:domain.icon||'leaf',color:domain.color,selected:selected===c.id,kind:'atlas-leaf'});
       });
     });
     for(const [from,to] of CROSS_LINKS){const a=positions.get(from),b=positions.get(to);if(a&&b)edges+='<g class="cross-link">'+edge(a[0],a[1]+40,b[0],b[1]+40,'#735982',true)+'</g>';}
-    nodes+=node({x:1200,y:990,id:'all',title:'MY KNOWLEDGE',subtitle:TRACKS.length+' branches · A world to discover',symbol:'tree',color:'#96711d',action:'branch',kind:'root-node atlas-core'});
+    nodes+=node({x:1200,y:990,id:'all',title:'MY KNOWLEDGE',subtitle:domains.length+' branches · A world to discover',symbol:'tree',color:'#96711d',action:'branch',kind:'root-node atlas-core'});
     return canvas(edges,nodes,2100,2400,'atlas');
   }else if(track!=='all'&&!search&&filter==='all'){
-    const t=trackById(track);
-    t.modules.forEach((m,i)=>{const x=500+(i%2)*1000,y=180+Math.floor(i/2)*390;
-      edges+=edge(1000,90,x,y,'#b7a77e',true);
-      nodes+=`<div class="module-map-label" style="left:${x}px;top:${y}px">${esc(m.title)}</div>`;
-      m.topics.forEach((topic,k)=>{const c=matches.find(c=>c.name===topic),cx=x+(k%2===0?-210:210),cy=y+65+Math.floor(k/2)*145;if(!c)return;
-        edges+=edge(x,y+20,cx,cy+30,t.color);
-        nodes+=node({x:cx,y:cy,id:c.id,title:c.name,subtitle:STATUSES[c.status].short,symbol:t.icon,color:STATUSES[c.status].color,selected:selected===c.id});
+    const domain=domains.find(item=>item.id===track),template=trackById(track);
+    if(template){
+      template.modules.forEach((m,i)=>{const x=500+(i%2)*1000,y=180+Math.floor(i/2)*390;
+        edges+=edge(1000,90,x,y,'#b7a77e',true);
+        nodes+=`<div class="module-map-label" style="left:${x}px;top:${y}px">${esc(m.title)}</div>`;
+        m.topics.forEach((topic,k)=>{const c=matches.find(c=>c.name===topic),cx=x+(k%2===0?-210:210),cy=y+65+Math.floor(k/2)*145;if(!c)return;
+          edges+=edge(x,y+20,cx,cy+30,template.color);
+          nodes+=node({x:cx,y:cy,id:c.id,title:c.name,subtitle:STATUSES[c.status].short,symbol:template.icon,color:STATUSES[c.status].color,selected:selected===c.id});
+        });
       });
-    });
-    nodes+=node({x:1000,y:10,id:'all',title:t.name,subtitle:'Return to all 20 branches',symbol:'tree',color:t.color,action:'branch',kind:'root-node'});
-    return canvas(edges,nodes,Math.ceil(t.modules.length/2)*390+190,2000,'domain-atlas');
+      nodes+=node({x:1000,y:10,id:'all',title:template.name,subtitle:'Return to all branches',symbol:'tree',color:template.color,action:'branch',kind:'root-node'});
+      return canvas(edges,nodes,Math.ceil(template.modules.length/2)*390+190,2000,'domain-atlas');
+    }
+    const info=domain||{name:'Knowledge',color:'#96711d',icon:'tree'},pageStart=Math.min(page,Math.floor((matches.length-1)/6))*6;
+    matches.slice(pageStart,pageStart+6).forEach((c,i)=>{const x=i%2===0?260:740,y=60+Math.floor(i/2)*185;if(i>=2)edges+=edge(x,y-110,x,y+20,STATUSES[c.status].color,true);nodes+=node({x,y,id:c.id,title:c.name,subtitle:STATUSES[c.status].short,symbol:info.icon||'tree',color:STATUSES[c.status].color,selected:selected===c.id});});
+    nodes+=node({x:500,y:625,id:'all',title:info.name.toUpperCase(),subtitle:'Return to all branches',symbol:'tree',color:info.color,action:'branch',kind:'root-node'});
   }else{
-    const pageStart=Math.min(page,Math.floor((matches.length-1)/6))*6;
-    matches.slice(pageStart,pageStart+6).forEach((c,i)=>{const x=i%2===0?260:740,y=60+Math.floor(i/2)*185;if(i>=2)edges+=edge(x,y-110,x,y+20,STATUSES[c.status].color,true);nodes+=node({x,y,id:c.id,title:c.name,subtitle:STATUSES[c.status].short,symbol:trackById(c.trackId).icon,color:STATUSES[c.status].color,selected:selected===c.id});});
-    nodes+=node({x:500,y:625,id:'all',title:track==='all'?'SEARCH RESULTS':trackById(track).name.toUpperCase(),subtitle:'Back to all branches',symbol:'tree',color:'#96711d',action:'branch',kind:'root-node'});
+    const pageStart=Math.min(page,Math.floor((matches.length-1)/6))*6,domain=domains.find(item=>item.id===track);
+    matches.slice(pageStart,pageStart+6).forEach((c,i)=>{const x=i%2===0?260:740,y=60+Math.floor(i/2)*185;if(i>=2)edges+=edge(x,y-110,x,y+20,STATUSES[c.status].color,true);nodes+=node({x,y,id:c.id,title:c.name,subtitle:STATUSES[c.status].short,symbol:trackById(c.trackId)?.icon||domain?.icon||'tree',color:STATUSES[c.status].color,selected:selected===c.id});});
+    nodes+=node({x:500,y:625,id:'all',title:track==='all'?'SEARCH RESULTS':trackById(track)?.name?.toUpperCase()||domain?.name?.toUpperCase()||'KNOWLEDGE',subtitle:'Back to all branches',symbol:'tree',color:'#96711d',action:'branch',kind:'root-node'});
   }
   return canvas(edges,nodes,780);
 }
