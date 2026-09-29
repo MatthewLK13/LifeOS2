@@ -4,7 +4,7 @@ import {icon,esc,btn,badge,progress} from './ui.js';
 import {todayPage,knowledgePage,roadmapPage,progressPage,settingsPage} from './pages.js';
 import {companionPage} from './companion.js';
 import {bindGraph} from './graph.js';
-import {restorePlayer,enterDemo,getState,createJourneyProposal,generateJourney,generateAIJourney,acceptProposal,rejectProposal,finishJourney,startQuest,completeQuest as completeQuestApi,updateQuestStep,updateQuestNote,streamCompanion,confirmMemory,dismissMemory,createAssessment,submitAssessment,startNewConversation,unlockInventoryItem,equipInventoryItem,getVapidPublicKey,savePushSubscription,deletePushSubscription} from './api-client.js';
+import {restorePlayer,enterDemo,logoutPlayer,getState,createJourneyProposal,generateJourney,generateAIJourney,acceptProposal,rejectProposal,finishJourney,startQuest,completeQuest as completeQuestApi,updateQuestStep,updateQuestNote,streamCompanion,confirmMemory,dismissMemory,createAssessment,submitAssessment,startNewConversation,unlockInventoryItem,equipInventoryItem,getVapidPublicKey,savePushSubscription,deletePushSubscription} from './api-client.js';
 import {loadPlayerState} from './bootstrap.js';
 import {toViewState} from './server-state.js';
 
@@ -73,6 +73,17 @@ async function switchToServer(action,code=''){
  }catch(error){toast(error.message||'The account could not be opened.');}
  finally{busy=false;}
 }
+async function startNewAccount(){
+ if(busy)return;busy=true;
+ try{
+  await logoutPlayer();
+  const result=await loadPlayerState({offlineState:state});
+  if(result.mode!=='server')throw result.error||new Error('The account service is unavailable.');
+  mode='server';identity=result.identity;state=result.state;bootstrapError=null;closeModal();render();toast(`Welcome, ${identity.player.displayName}. Your new account is connected.`);
+  if(result.playerCode){oneTimePlayerCode=result.playerCode;openModal('player-code');}
+ }catch(error){toast(error.message||'The new account could not be created.');}
+ finally{busy=false;}
+}
 function renderModal(){
   if(!modal)return;const {type,id}=modal;let html='';
   if(type==='quest'){
@@ -114,7 +125,7 @@ function renderModal(){
   }else if(type==='new-journey'){
     html=dialog('Where will curiosity take you?',`<p>Choose an art to explore. Arcana will ask about your starting point and daily rhythm, then prepare your roadmap.</p><div class="journey-options">${TRACKS.map(t=>`<button data-action="start-track" data-id="${t.id}" style="--domain-color:${t.color}"><span>${icon(t.icon)}</span><div><strong>${esc(t.name)}</strong><small>${esc(t.goal)}</small></div>${icon('arrow')}</button>`).join('')}</div><p class="small-copy">${TRACKS.length} detailed curriculum templates · ${mode==='server'?'You can keep multiple active journeys.':'Up to three active demo journeys.'}</p>`);
   }else if(type==='identity'){
-    html=dialog('Your learning account',`<p>Restore a saved grimoire with its Player Code, or enter the seeded Minh demo account.</p><form id="restore-player-form"><label class="input-label" for="player-code">Player Code</label><input id="player-code" name="code" autocomplete="off" autocapitalize="characters" minlength="10" maxlength="32" placeholder="ABCD-EFGH-JK" required><button class="btn primary" type="submit">${icon('shield')} Restore my progress</button></form><div class="thin-rule"></div><button class="btn" data-action="enter-demo">Enter demo as Minh</button><p class="small-copy">If the account server is offline, your browser demo remains available.</p>`,btn('Close','close'));
+    html=dialog('Your learning account',`<p>Restore a saved grimoire with its Player Code, start a fresh account, or enter the seeded Minh demo account.</p><form id="restore-player-form"><label class="input-label" for="player-code">Player Code</label><input id="player-code" name="code" autocomplete="off" autocapitalize="characters" minlength="10" maxlength="32" placeholder="ABCD-EFGH-JK" required><button class="btn primary" type="submit">${icon('shield')} Restore my progress</button></form><div class="thin-rule"></div><button class="btn" data-action="new-account">Create a new account</button><button class="btn" data-action="enter-demo">Enter demo as Minh</button><p class="small-copy">Creating a new account signs out this browser session but does not delete the old account. If the account server is offline, your browser demo remains available.</p>`,btn('Close','close'));
   }else if(type==='player-code'){
     html=dialog('Keep your Player Code safe',`<p>This is the only time your recovery code will be shown. Save it somewhere private so you can restore this grimoire on another browser.</p><div class="recovery-code" aria-label="Your Player Code">${esc(oneTimePlayerCode||'')}</div><p class="small-copy">Anyone with this code can access the account. The server stores only a secure digest.</p>`,`${btn('Copy code','copy-player-code')}${btn('I saved it','close',{primary:true,icon:'check'})}`);
   }
@@ -211,6 +222,7 @@ const actions={
  reset:()=>openModal('reset'),
  identity:()=>openModal('identity'),
  'enter-demo':()=>switchToServer('demo'),
+ 'new-account':()=>void startNewAccount(),
  'copy-player-code':async()=>{try{await navigator.clipboard.writeText(oneTimePlayerCode||'');toast('Player Code copied. Store it somewhere private.');}catch{toast('Copy was blocked. Select the code and copy it manually.');}},
  'confirm-reset':()=>{if(busy)return;commit(createInitialState());view={track:'all',search:'',filter:'all',concept:'python-0',chapter:1,view:'graph'};closeModal();navigate('today');toast('Your demo is ready for a fresh adventure.');}
 };

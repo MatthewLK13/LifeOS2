@@ -43,6 +43,7 @@ async function mutate(path,method,{body,fetchImpl=globalThis.fetch}={}){
 const questPath=(id,action)=>`/api/quests/${encodeURIComponent(id)}/${action}`;
 const transportOnly=options=>({fetchImpl:options?.fetchImpl});
 export const createPlayer=options=>mutate('/api/player','POST',transportOnly(options));
+export const logoutPlayer=options=>mutate('/api/player/logout','POST',transportOnly(options));
 export const restorePlayer=(code,options)=>mutate('/api/player/restore','POST',{...transportOnly(options),body:{code}});
 export const enterDemo=options=>mutate('/api/player/demo','POST',transportOnly(options));
 export const getCurrentPlayer=options=>mutate('/api/player/me','GET',transportOnly(options));

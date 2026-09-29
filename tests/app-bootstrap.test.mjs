@@ -17,3 +17,17 @@ test('bootstrap falls back to local demo only when identity or state service is 
  assert.equal(result.mode,'offline');assert.equal(result.state,localState);
  await assert.rejects(()=>loadPlayerState({offlineState:localState,api:{getCurrentPlayer:async()=>{throw Object.assign(new Error('invalid code'),{code:'PLAYER_CODE_INVALID',status:401});}}}),error=>error.code==='PLAYER_CODE_INVALID');
 });
+
+test('bootstrap uses the real API client when called without an injected client',async()=>{
+ const originalFetch=globalThis.fetch;
+ globalThis.fetch=async path=>{
+  if(path==='/api/player/me')return new Response(JSON.stringify({player:{id:'player-3'},isNew:false}),{status:200,headers:{'content-type':'application/json'}});
+  if(path==='/api/state')return new Response(JSON.stringify({profile:{displayName:'Scribe',preferences:{}},activeJourney:null,journeys:[],quests:[],knowledge:{domains:[],concepts:[],progress:[],ranks:[]},progress:{totalXp:0,dailyXp:0,streak:0,longestStreak:0},achievements:[],milestones:[],inventory:[]}),{status:200,headers:{'content-type':'application/json'}});
+  throw new Error(`Unexpected request: ${path}`);
+ };
+ try{
+  const result=await loadPlayerState({offlineState:{xp:250}});
+  assert.equal(result.mode,'server');
+  assert.equal(result.identity.player.id,'player-3');
+ }finally{globalThis.fetch=originalFetch;}
+});

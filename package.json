@@ -12,7 +12,7 @@
     "db:generate": "node scripts/drizzle-kit.cjs generate",
     "db:migrate": "node --experimental-strip-types server/db/migrate.ts",
     "db:seed": "node --experimental-strip-types server/db/run-seed.ts",
-    "test": "node --experimental-strip-types --test tests/**/*.test.mjs",
+    "test": "node --experimental-strip-types --test \"tests/**/*.test.mjs\"",
     "build": "node scripts/build.mjs"
   },
   "engines": {

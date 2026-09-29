@@ -5,7 +5,7 @@ import {z} from 'zod';
 import type {AppEnv} from '../config/env.ts';
 import {localDateAt} from '../config/game-rules.ts';
 import * as s from '../db/schema.ts';
-import {createSessionToken,digestPlayerCode,formatPlayerCode,generatePlayerCode,isPlayerCode,makeSessionCookie,readSessionCookie,verifySessionToken} from './identity.ts';
+import {clearSessionCookie,createSessionToken,digestPlayerCode,formatPlayerCode,generatePlayerCode,isPlayerCode,makeSessionCookie,readSessionCookie,verifySessionToken} from './identity.ts';
 
 const restoreSchema=z.object({code:z.string().trim().min(10).max(32)}).strict();
 const WINDOW_MS=15*60*1000;
@@ -72,6 +72,10 @@ export function createPlayerRoutes(options:RoutesOptions){
  const router=new Hono();
  const {db,env,now=()=>new Date(),trustVercelProxy=false,clientIp=(headers)=>trustedClientIp(headers,env,trustVercelProxy)}=options;
  const ready=()=>Boolean(db&&env.SESSION_SECRET&&env.PLAYER_CODE_PEPPER);
+ router.post('/player/logout',c=>{
+  c.header('Set-Cookie',clearSessionCookie({production:env.NODE_ENV==='production'}));
+  return c.json({ok:true});
+ });
  router.post('/player',async c=>{
   c.header('Cache-Control','no-store');
   if(!ready())return unavailable(c);

@@ -53,3 +53,6 @@ export function readSessionCookie(header:string|undefined):string|undefined{
 export function makeSessionCookie(token:string,{production=false}={}){
  return `${SESSION_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_SECONDS}${production?'; Secure':''}`;
 }
+export function clearSessionCookie({production=false}={}){
+ return `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${production?'; Secure':''}`;
+}

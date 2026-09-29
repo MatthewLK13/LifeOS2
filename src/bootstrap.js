@@ -4,7 +4,7 @@ import {toViewState} from './server-state.js';
 const recoverable=new Set(['NETWORK_ERROR','IDENTITY_UNAVAILABLE','STATE_UNAVAILABLE','API_UNAVAILABLE','INVALID_RESPONSE']);
 
 export async function loadPlayerState(options={}){
- const client=options.api??options;
+ const client=options.api??(options.getCurrentPlayer?options:api);
  const offlineState=options.offlineState;
  try{
   let identity;

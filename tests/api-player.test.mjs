@@ -51,6 +51,13 @@ test('demo endpoint switches to the seeded Minh profile without exposing credent
  const me=await send('/player/me',{method:'GET',cookie:sessionCookie(response)});assert.equal((await me.json()).player.id,body.player.id);
 });
 
+test('logout clears the current session without deleting the player',async()=>{
+ const created=await send('/player');const cookie=sessionCookie(created);const player=(await created.json()).player;
+ const response=await send('/player/logout',{cookie});assert.equal(response.status,200);assert.match(response.headers.get('set-cookie'),/Max-Age=0/);
+ const me=await send('/player/me',{method:'GET'});assert.equal(me.status,401);
+ assert.equal((await db.select().from(schema.players).where(eq(schema.players.id,player.id))).length,1);
+});
+
 test('invalid sessions are rejected and malformed identity requests are safe',async()=>{
  const malformed=await send('/player/restore',{body:{code:'short',playerId:'other'}});assert.equal(malformed.status,400);
  const unauthorized=await send('/player/me',{method:'GET',cookie:'lifeos_session=not.a.valid.signature'});assert.equal(unauthorized.status,401);
