@@ -161,8 +161,8 @@
 - [x] **Step 3: Verify desktop layout at 1280px and 900px; fix only issues found.** Mobile-width QA was intentionally omitted because the user asked to focus on desktop.
 - [x] **Step 4: Run typecheck, all tests, and build; record final pass/fail counts.** `pnpm typecheck` and `pnpm build` passed. `node --experimental-strip-types --test --test-concurrency=1 <all tests/**/*.test.mjs>` passed 141/141. Serial execution avoids this host's memory issue with the default parallel test command.
 - [x] **Step 5: Smoke-check offline demo and account bootstrap; confirm API payloads remain unchanged and demo actions do not masquerade as persisted state.** Offline preview and account-service-unavailable fallback rendered; focused tests cover unchanged session-backed API contracts and demo-only actions.
-- [ ] **Step 6: Review `git diff --check` and changed files. Commit the implementation and push only `feature/skill-intelligence-v2`. Keep `repomix.md` out of commits.**
-- [ ] **Step 7: STOP after Phase 2 and present the UI for user review. Do not implement Phase 3, BKT, database migrations, evidence persistence, or real recommendation APIs.**
+- [x] **Step 6: Review `git diff --check` and changed files. Commit the implementation and push only `feature/skill-intelligence-v2`. Keep `repomix.md` out of commits.**
+- [x] **Step 7: STOP after Phase 2 and present the UI for user review. Do not implement Phase 3, BKT, database migrations, evidence persistence, or real recommendation APIs.**
 
 ---
 
