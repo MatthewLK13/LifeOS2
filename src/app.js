@@ -7,11 +7,14 @@ import {bindGraph} from './graph.js';
 import {restorePlayer,enterDemo,logoutPlayer,getState,createJourneyProposal,generateJourney,generateAIJourney,acceptProposal,rejectProposal,finishJourney,startQuest,completeQuest as completeQuestApi,updateQuestStep,updateQuestNote,streamCompanion,confirmMemory,dismissMemory,createAssessment,submitAssessment,startNewConversation,unlockInventoryItem,equipInventoryItem,getVapidPublicKey,savePushSubscription,deletePushSubscription} from './api-client.js';
 import {loadPlayerState} from './bootstrap.js';
 import {toViewState} from './server-state.js';
+import {createSkillIntelligenceDemoState,selectCareerTarget,completeRecallQuest} from './skill-intelligence.js';
+import {renderTodaySkillPage,renderRecommendationExplanation,renderSkillGapDetail,renderCareerCampaignPage,renderBossQuestDetail,renderSkillKnowledgePage,renderProgressSkillPage,renderRankUpPreview,renderLearningHubPage,renderCourseDetail} from './skill-pages.js';
 
 let storageWarning=false,raw=null;
 try{raw=localStorage.getItem(STORAGE_KEY);}catch{storageWarning=true;}
 let state=hydrate(raw),mode='offline',identity=null,oneTimePlayerCode=null,bootstrapError=null,busy=false,modal=null,returnFocus=null,toastTimer,disposeGraph,chatAbort=null,retryMessage='',aiRoadmapFlow=null;
-const nav=[['today','book','Today'],['knowledge','tree','My Knowledge'],['roadmap','compass','Roadmap'],['companion','spark','Companion'],['progress','chart','Progress'],['settings','settings','Settings']];
+let skillIntelligence=createSkillIntelligenceDemoState();
+const nav=[['today','book','Today'],['knowledge','tree','My Knowledge'],['roadmap','compass','Career Campaign'],['companion','spark','Companion'],['learning','book','Learning Hub'],['progress','chart','Progress'],['settings','settings','Settings']];
 let page=nav.some(([id])=>id===location.hash.slice(1))?location.hash.slice(1):'today';
 let view={track:'all',search:'',filter:'all',concept:'python-0',chapter:1,view:'graph'};
 const app=document.querySelector('#app');
@@ -53,7 +56,7 @@ function render(){
   const displayName=state.profile?.displayName||'Minh';
   app.innerHTML=`<header class="topbar"><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle navigation">${icon('menu')}</button><a class="brand" href="#today"><img src="/assets/crest.png" alt=""><span><strong>LIFEOS GRIMOIRE</strong><small>Tome of Mastery · Vol. IV</small></span></a><div class="topbar-center"><span class="little-diamond">✦</span> A little wiser, every day <span class="little-diamond">✦</span></div><div class="topbar-right"><span class="demo-indicator"><i></i> ${mode==='server'?'ACCOUNT SAVED':'OFFLINE DEMO'}</span><div class="profile-mini"><span><strong>${esc(displayName)}</strong><small>Level ${levelFor(state.xp)} · ${state.xp} XP</small></span><img src="/assets/minh.png" alt="${esc(displayName)}'s profile"></div></div></header>
   <aside class="sidebar" aria-label="Main navigation"><div class="chronicle"><div class="eyebrow">CHRONICLE CYCLE ${icon('clock')}</div><h3>Chapter IV</h3><span>The Season of Discovery</span><div class="chronicle-rule"><span>✦</span></div></div><nav>${nav.map(([id,i,label])=>`<a href="#${id}" class="nav-link ${page===id?'active':''}" ${page===id?'aria-current="page"':''}>${icon(i)}<span>${label}</span>${id==='companion'?'<span class="nav-new">NEW</span>':''}</a>`).join('')}</nav><div class="sidebar-bottom"><div class="sidebar-quote">“A thousand branches.<br>One curious mind.”</div><button class="new-journey-btn" data-action="new-journey">${icon('plus')} Begin a new journey</button><div class="local-status">${icon('shield')} ${mode==='server'?'Connected account':'Offline demo'}<span>${mode==='server'?'Progress saved to your account':'Saved in this browser'}</span></div><button class="text-button" data-action="identity">${mode==='server'?'Switch account':'Restore / enter account'}</button></div></aside>
-  <main id="main" tabindex="-1"><div class="page-kicker"><span>LIFEOS ACADEMY <span>/</span> ${nav.find(([id])=>id===page)[2].toUpperCase()}</span><span>✧ THE GRAND ARCHIVES</span></div>${storageWarning&&mode==='offline'?'<div class="notice" role="status">Browser storage is unavailable. You can keep exploring, but changes will last only for this session.</div>':''}${mode==='offline'&&bootstrapError?'<div class="notice" role="status">The account service is unavailable. You are viewing the offline demo saved in this browser.</div>':''}${page==='today'?todayPage(state):page==='knowledge'?knowledgePage(state,view):page==='roadmap'?roadmapPage(state,view):page==='companion'?companionPage(state,busy,retryMessage,mode==='server',aiRoadmapFlow):page==='progress'?progressPage(state):settingsPage(state)}<footer class="page-footer"><span>✦ LIFEOS · A GRIMOIRE OF SMALL VICTORIES</span><span>Craft your own chapter.</span></footer></main>`;
+  <main id="main" tabindex="-1"><div class="page-kicker"><span>LIFEOS ACADEMY <span>/</span> ${nav.find(([id])=>id===page)[2].toUpperCase()}</span><span>✧ THE GRAND ARCHIVES</span></div>${storageWarning&&mode==='offline'?'<div class="notice" role="status">Browser storage is unavailable. You can keep exploring, but changes will last only for this session.</div>':''}${mode==='offline'&&bootstrapError?'<div class="notice" role="status">The account service is unavailable. You are viewing the offline demo saved in this browser.</div>':''}${page==='today'?`${renderTodaySkillPage(skillIntelligence,{demoPreview:true})}${todayPage(state)}`:page==='knowledge'?`${renderSkillKnowledgePage(skillIntelligence)}${knowledgePage(state,view)}`:page==='roadmap'?`${renderCareerCampaignPage(skillIntelligence)}<section id="active-journey-map" class="campaign-existing-journey"><div class="eyebrow">CURRENT JOURNEY · EXISTING STATE</div><p class="small-copy">The roadmap below is your existing active Journey and remains the source of persisted chapters and activities.</p>${roadmapPage(state,view)}</section>`:page==='companion'?companionPage(state,busy,retryMessage,mode==='server',aiRoadmapFlow):page==='learning'?renderLearningHubPage(skillIntelligence):page==='progress'?`${renderProgressSkillPage(skillIntelligence,state)}${progressPage(state)}`:settingsPage(state)}<footer class="page-footer"><span>✦ LIFEOS · A GRIMOIRE OF SMALL VICTORIES</span><span>Craft your own chapter.</span></footer></main>`;
   if(page==='knowledge'||page==='roadmap')disposeGraph=bindGraph(app);
   bindForms();
   if(page==='companion'){const log=document.querySelector('#chat-transcript');log.scrollTop=log.scrollHeight;}
@@ -108,6 +111,23 @@ function renderModal(){
   }else if(type==='evidence'){
     const c=state.concepts.find(c=>c.id===id);
     html=c.serverBacked?dialog(`${c.name} · Knowledge`,`${badge(STATUSES[c.status].label,'gold')}<p>${esc(c.scope)}</p><div class="notice">This account stores structured knowledge signals. Private conversation evidence is not exposed in this view.</div><p class="small-copy">This level changes only when a supported learning activity records a knowledge signal.</p>`,btn('Close','close')):dialog(`${c.name} · Evidence`,`${badge(STATUSES[c.status].label,'gold')}<p>${esc(c.scope)}</p><div class="notice">These are labeled sample conversations. They are not observations about you.</div>${c.evidence.length?c.evidence.map(e=>`<blockquote class="evidence"><div class="eyebrow">MINH · ${esc(e.date)}</div><p>“${esc(e.text)}”</p><footer>${esc(e.reason)}</footer></blockquote>`).join(''):'<div class="empty-state"><h3>No conversation evidence</h3><p>You can still explore and learn this topic.</p></div>'}<p class="small-copy">Self-reports and inferred observations remain separate. Removing this fixture will mark the concept as not yet observed.</p>`,`${btn('Mark as self-reported','self-report',{id,icon:'pen'})}${c.evidence.length?btn('Exclude this evidence','exclude-evidence',{id,icon:'trash'}):''}${btn('Close','close')}`);
+  }else if(type==='skill-detail'){
+    const concept=skillIntelligence.learnerState.concepts.find(item=>item.conceptId===id),gap=skillIntelligence.career.criticalGaps.find(item=>item.conceptId===id);
+    html=dialog(concept?.name||'Skill detail',renderSkillGapDetail(gap,concept),btn('Close','close'));
+  }else if(type==='recommendation-detail'){
+    const action=skillIntelligence.recommendations.find(item=>item.id===id);
+    if(!action){closeModal();return;}
+    html=dialog('Why this action?',renderRecommendationExplanation(action),btn('Close','close'));
+  }else if(type==='boss-detail'){
+    const boss=skillIntelligence.campaign.bossQuests.find(item=>item.id===id);
+    if(!boss){closeModal();return;}
+    html=dialog(boss.title,renderBossQuestDetail(boss,{submitted:!!skillIntelligence.demoBossSubmitted}),`${btn('Close','close')}${skillIntelligence.demoBossSubmitted?'':btn('Submit demo work','submit-boss',{primary:true,icon:'check'})}`,true);
+  }else if(type==='rank-up'){
+    html=dialog('Rank-Up preview',renderRankUpPreview(),btn('Close','close'));
+  }else if(type==='course-detail'){
+    const course=skillIntelligence.learningHub.courseRecommendations.find(item=>item.id===id);
+    if(!course){closeModal();return;}
+    html=dialog(course.title,renderCourseDetail(course),btn('Close','close'));
   }else if(type==='schedule'){
     const j=activeJourney(state);
     html=dialog('Find your daily rhythm',`<p>Your current plan reserves <strong>${j.minutes} minutes a day</strong>. Choose a pace that fits your life.</p><form id="schedule-form"><label class="input-label" for="daily-minutes">Daily learning time</label><select id="daily-minutes" name="minutes">${[15,30,45,60,90,120].map(m=>`<option value="${m}" ${j.minutes===m?'selected':''}>${m} minutes a day</option>`).join('')}</select><p class="small-copy">The next screen shows the impact. Changes take effect only after you apply them.</p><button class="btn primary" type="submit">${icon('search')} Preview changes</button></form>`);
@@ -182,6 +202,15 @@ async function createCustomRoadmapPreview(){
 function startTrack(id){if(busy)return;const track=trackById(id),dynamic=state.domains?.find(domain=>domain.id===id||domain.key===id);if(mode==='server'){beginAiRoadmapFlow(`I want to learn ${track?.name||dynamic?.name||id}`,track?.goal||'');return;}if(!track){toast('Arcana can add a full roadmap for this new branch once custom journey generation is connected.');return;}closeModal();state.builder={stage:'goal'};state.draft=null;save();navigate('companion');sendChat(track.goal);}
 const actions={
  navigate: id=>navigate(id),menu:()=>document.querySelector('.sidebar').classList.toggle('open'),
+ 'skill-detail':id=>openModal('skill-detail',id),
+ 'recommendation-detail':id=>openModal('recommendation-detail',id),
+ 'boss-detail':id=>openModal('boss-detail',id),
+ 'rank-up':()=>openModal('rank-up'),
+ 'course-detail':id=>openModal('course-detail',id),
+ 'submit-boss':()=>{if(!document.querySelector('#boss-submission')?.value.trim()){toast('Add a short demo note before submitting.');return;}skillIntelligence={...skillIntelligence,demoBossSubmitted:true};renderModal();},
+ 'choose-recommendation':id=>{skillIntelligence={...skillIntelligence,selectedActionId:id};render();toast('Action selected for this demo. No learning state or reward has changed.');},
+ 'scroll-journey':()=>document.querySelector('#active-journey-map')?.scrollIntoView({behavior:'smooth'}),
+ 'recall-quest':id=>{skillIntelligence=completeRecallQuest(skillIntelligence,id);renderModal();toast('Recall complete. The demo freshness signal was refreshed; mastery and progress are unchanged.');},
  quest:id=>openModal('quest',id),close:closeModal,
  'start-assessment':id=>{modal={type:'assessment',id};renderModal();},
  'create-assessment':subtype=>{if(busy)return;const q=state.quests.find(item=>item.id===modal?.id);if(!q)return;busy=true;void createAssessment({subtype,topic:q.topic||q.title,prompt:q.prompt||q.description||q.title,questId:q.id}).then(({assessment})=>{modal={...modal,assessment};renderModal();}).catch(error=>toast(error.message||'This assessment could not be prepared. You can complete the quest manually.')).finally(()=>{busy=false;});},
@@ -226,13 +255,14 @@ const actions={
  'copy-player-code':async()=>{try{await navigator.clipboard.writeText(oneTimePlayerCode||'');toast('Player Code copied. Store it somewhere private.');}catch{toast('Copy was blocked. Select the code and copy it manually.');}},
  'confirm-reset':()=>{if(busy)return;commit(createInitialState());view={track:'all',search:'',filter:'all',concept:'python-0',chapter:1,view:'graph'};closeModal();navigate('today');toast('Your demo is ready for a fresh adventure.');}
 };
-document.addEventListener('click',e=>{const target=e.target.closest('[data-action]');if(target&&!target.disabled){try{actions[target.dataset.action]?.(target.dataset.id);}catch(err){toast(err.message);}}else if(e.target.classList.contains('modal-backdrop'))closeModal();});
+document.addEventListener('click',e=>{const target=e.target.closest('[data-action]');if(target&&!target.disabled){try{if(target.dataset.page==='knowledge'){navigate('knowledge');actions[target.dataset.action]?.(target.dataset.id);}else actions[target.dataset.action]?.(target.dataset.id);}catch(err){toast(err.message);}}else if(e.target.classList.contains('modal-backdrop'))closeModal();});
 document.addEventListener('keydown',e=>{
   if(!modal)return;if(e.key==='Escape'){closeModal();return;}
   if(e.key==='Tab'){const dialog=document.querySelector('.modal'),controls=[...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select,textarea')];if(!controls.length)return;const first=controls[0],last=controls.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===dialog)){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===dialog)){e.preventDefault();first.focus();}}
 });
 window.addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(nav.some(([n])=>n===id)&&id!==page){page=id;closeModal();render();window.scrollTo(0,0);}});
 function bindForms(){
+  const careerTarget=document.querySelector('[name="careerTarget"]');if(careerTarget)careerTarget.onchange=e=>{skillIntelligence=selectCareerTarget(skillIntelligence,e.target.value);render();};
   const search=document.querySelector('#concept-search');if(search)search.oninput=e=>{const pos=e.target.selectionStart;view.conceptPage=0;view.search=e.target.value;render();const el=document.querySelector('#concept-search');el.focus();try{el.setSelectionRange(pos,pos);}catch{}};
   const filter=document.querySelector('#status-filter');if(filter)filter.onchange=e=>{view.conceptPage=0;view.filter=e.target.value;render();};
   const select=document.querySelector('#journey-select');if(select)select.onchange=e=>{state.activeId=e.target.value;view.examplePlan=null;view.chapter=0;save();render();};

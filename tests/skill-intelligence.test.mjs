@@ -38,6 +38,14 @@ test('selecting another career returns coherent role-specific mock gaps and acti
  }
 });
 
+test('switching career clears selections and mock submission status tied to the prior role',()=>{
+ const initial={...createSkillIntelligenceDemoState(),selectedActionId:'backend-developer-0',demoBossSubmitted:true};
+ const selected=selectCareerTarget(initial,'ai-ml-engineer');
+ assert.equal(selected.selectedActionId,undefined);
+ assert.equal(selected.demoBossSubmitted,false);
+ assert.equal(selected.campaign.bossQuests[0].title,'Build and Evaluate a Prediction Service');
+});
+
 test('semantic graph seed includes each supported relation type',()=>{
  const state=createSkillIntelligenceDemoState();
  assert.deepEqual(new Set(state.learnerState.relationships.map(edge=>edge.type)),new Set(['PREREQUISITE','RELATED','PART_OF','TRANSFERABLE_TO']));

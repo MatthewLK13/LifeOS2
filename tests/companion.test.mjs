@@ -7,6 +7,12 @@ test('account Companion renders pending memory confirmation without exposing int
  assert.match(html,/ARCANA NOTICED/);assert.match(html,/Learns best through projects/);assert.match(html,/Remember/);assert.match(html,/Dismiss/);assert.doesNotMatch(html,/private/);
 });
 
+test('Companion separates conversational reflections from evaluated skill evidence',()=>{
+ const html=companionPage({builder:{stage:'goal'},messages:[],memoryCandidates:[]},false,'',true);
+ assert.match(html,/not evaluated skill evidence/i);
+ assert.match(html,/Only supported learning activities update an account skill state/i);
+});
+
 test('custom roadmap preview renders without a seeded track and exposes Accept and Reject actions',()=>{
  const html=draftCard({aiProposalId:'proposal-1',trackId:'esp32-iot',trackName:'ESP32 IoT',title:'Sensor Systems',minutes:30,days:20,experience:'beginner',chapters:[{title:'Foundations',lane:'Core',topics:['GPIO']}]});
  assert.match(html,/ESP32 IoT/);assert.match(html,/AI-generated preview/);assert.match(html,/data-action="activate"/);assert.match(html,/data-action="reject-roadmap"/);

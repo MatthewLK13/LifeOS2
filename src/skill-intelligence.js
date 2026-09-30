@@ -122,7 +122,7 @@ function applyCareer(state,roleId,coverageOverride){
   career:{targetRole:clone(role.targetRole),readiness:readiness(coverage,role.readiness),coverage,confidence:role.confidence,criticalGaps},
   recommendations,
   campaign:{...state.campaign,targetRoleId:roleId,title:role.campaignName,arcs,bossQuests:[bossQuest]},
-  learningHub:{...state.learningHub,courseRecommendations:clone(role.courses),recommendedForGaps:clone(role.courses)},
+  learningHub:{...state.learningHub,courseRecommendations:[...clone(role.courses).map(course=>({...course,coveredSkills:[...course.concepts],fitReason:`Strong match for ${role.targetRole.name} skill gaps`,providerTrust:'Reviewed demo provider',sponsored:course.price!=='Free',commission:course.price==='Free'?0:75})),{id:`${roleId}-open-practice`,title:`${role.targetRole.name} Open Practice Lab`,provider:'LifeOS Open Library',skillFit:85,level:'Beginner',duration:'2 hours',price:'Free',concepts:role.skills.slice(0,2),url:'https://example.com/free-learning',category:'FREE',coveredSkills:role.skills.slice(0,2),fitReason:'Free practice for core role skills',providerTrust:'Open learning resource',sponsored:false,commission:0}],recommendedForGaps:clone(role.courses)},
   skillPassport:{title:`${role.targetRole.name.replace(' Intern','').toUpperCase()} SKILL PASSPORT`,skills:skillPassport}
  };
 }
@@ -139,7 +139,9 @@ export function createSkillIntelligenceDemoState({coverage}={}){
 
 export function selectCareerTarget(state,roleId){
  if(!roles[roleId])return state;
- return applyCareer(clone(state),roleId);
+ const changed=roleId!==state.career?.targetRole?.id;
+ const next=applyCareer(clone(state),roleId);
+ return changed?{...next,selectedActionId:undefined,demoBossSubmitted:false}:next;
 }
 
 export function completeRecallQuest(state,conceptId){
