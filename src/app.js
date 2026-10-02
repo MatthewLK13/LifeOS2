@@ -14,7 +14,7 @@ import {getQuestById,getDemoSubmission} from './demo-quests.js';
 
 let storageWarning=false,raw=null;
 try{raw=localStorage.getItem(STORAGE_KEY);}catch{storageWarning=true;}
-let state=hydrate(raw),mode='offline',identity=null,oneTimePlayerCode=null,bootstrapError=null,busy=false,modal=null,returnFocus=null,toastTimer,disposeGraph,chatAbort=null,retryMessage='',aiRoadmapFlow=null,drawerOpen=false,drawerReturnFocus=null;
+let state=hydrate(raw),mode='offline',identity=null,oneTimePlayerCode=null,bootstrapError=null,busy=false,modal=null,dialogError='',returnFocus=null,toastTimer,disposeGraph,chatAbort=null,retryMessage='',aiRoadmapFlow=null,drawerOpen=false,drawerReturnFocus=null;
 let skillIntelligence=createSkillIntelligenceDemoState();
 let planner=createPlannerState();
 const nav=[['today','book','Today'],['knowledge','tree','My Knowledge'],['roadmap','compass','Career Campaign'],['learning','book','Learning Hub']];
@@ -28,22 +28,22 @@ function commit(next){state=next;save();}
 function toast(message){const t=document.querySelector('#toast');t.innerHTML=`${icon('check')}<span>${esc(message)}</span>`;t.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('visible'),4200);}
 async function refreshServerState(){state=toViewState(await getState());render();}
 async function serverMutation(request,{message,keepModal=false}={}){
- if(busy)return false;busy=true;
+  if(busy)return false;busy=true;dialogError='';if(modal)renderModal();
  try{await request();await refreshServerState();if(keepModal)renderModal();if(message)toast(message);return true;}
- catch(error){if(keepModal)renderModal();toast(error.message||'The change could not be saved. Your account state is unchanged.');return false;}
- finally{busy=false;}
+  catch(error){const message=error.message||'The change could not be saved. Your account state is unchanged.';dialogError=message;if(keepModal||modal)renderModal();toast(message);return false;}
+  finally{busy=false;if(modal)renderModal();}
 }
 async function createRoadmapOnServer(plan){
- if(busy)return;busy=true;
+  if(busy)return;busy=true;dialogError='';if(modal)renderModal();
  try{if(plan.aiProposalId)await acceptProposal(plan.aiProposalId);else{const created=await generateJourney({templateKey:plan.trackId,experienceLevel:plan.experience,minutesPerDay:plan.minutes,title:plan.title,goal:plan.goal});await acceptProposal(created.proposal.id);}await refreshServerState();state.draft=null;view.examplePlan=null;view.chapter=0;closeModal();navigate('roadmap');toast('A new journey begins. Your roadmap is now active.');}
- catch(error){toast(error.message||'The roadmap could not be saved.');}
- finally{busy=false;}
+  catch(error){showDialogError(error.message||'The roadmap could not be saved.');}
+  finally{busy=false;if(modal)renderModal();}
 }
 async function previewPacingOnServer(journey,minutes){
- if(busy)return;busy=true;
+  if(busy)return;busy=true;dialogError='';if(modal)renderModal();
  try{const {proposal}=await createJourneyProposal(journey.id,{type:'PACING',minutesPerDay:minutes}),preview=proposal.preview;state.proposal={serverProposalId:proposal.id,previous:preview.previousMinutesPerDay,minutes:preview.minutesPerDay,days:Math.ceil(journey.days*journey.minutes/preview.minutesPerDay)};modal={type:'proposal'};renderModal();}
- catch(error){toast(error.message||'The schedule could not be previewed.');}
- finally{busy=false;}
+  catch(error){showDialogError(error.message||'The schedule could not be previewed.');}
+  finally{busy=false;if(modal)renderModal();}
 }
 function vapidBytes(value){const base64=value.replace(/-/g,'+').replace(/_/g,'/'),padded=base64+'='.repeat((4-base64.length%4)%4),raw=atob(padded);return Uint8Array.from(raw,char=>char.charCodeAt(0));}
 async function enablePush(){
@@ -64,11 +64,11 @@ function render(){
  }
 function isMobileViewport(){return globalThis.matchMedia?.('(max-width: 768px)').matches??false;}
 function syncShellState(){
-  const mobile=isMobileViewport(),trigger=document.querySelector('.mobile-menu'),sidebar=document.querySelector('.sidebar'),profile=document.querySelector('.profile-button'),main=document.querySelector('main');
+  const mobile=isMobileViewport(),trigger=document.querySelector('.mobile-menu'),sidebar=document.querySelector('.sidebar'),profile=document.querySelector('.profile-button'),main=document.querySelector('main'),appRoot=document.querySelector('#app');
   let scrim=document.querySelector('.drawer-scrim');
   if(!scrim){scrim=document.createElement('button');scrim.type='button';scrim.className='drawer-scrim';scrim.dataset.action='close-menu';scrim.setAttribute('aria-label','Close navigation');document.querySelector('#app')?.prepend(scrim);}
   trigger?.setAttribute('aria-controls','main-navigation');trigger?.setAttribute('aria-expanded',String(mobile&&drawerOpen));
-  sidebar?.setAttribute('id','main-navigation');sidebar?.classList.toggle('open',mobile&&drawerOpen);sidebar?.setAttribute('aria-hidden',String(mobile&&!drawerOpen));sidebar?.toggleAttribute('inert',mobile&&!drawerOpen);main?.toggleAttribute('inert',mobile&&drawerOpen);
+  sidebar?.setAttribute('id','main-navigation');sidebar?.classList.toggle('open',mobile&&drawerOpen);sidebar?.setAttribute('aria-hidden',String(mobile&&!drawerOpen));sidebar?.toggleAttribute('inert',mobile&&!drawerOpen);main?.toggleAttribute('inert',mobile&&drawerOpen);appRoot?.toggleAttribute('inert',Boolean(modal));
   profile?.setAttribute('aria-haspopup','dialog');profile?.setAttribute('aria-controls','modal-root');profile?.setAttribute('aria-expanded',String(modal?.type==='profile-menu'));
   document.querySelectorAll('.sidebar .nav-link').forEach(link=>link.dataset.action='close-menu');
   const modeLabel=document.querySelector('.page-kicker > span:last-child');if(modeLabel)modeLabel.textContent=mode==='server'?'ACCOUNT SAVED':'DEMO DATA';
@@ -82,11 +82,13 @@ function setDrawer(open){
   if(open){drawerReturnFocus=document.activeElement;drawerOpen=true;render();queueMicrotask(()=>document.querySelector('#main-navigation .nav-link, #main-navigation button')?.focus());return;}
   const restore=drawerReturnFocus;drawerOpen=false;drawerReturnFocus=null;render();if(restore?.isConnected)restore.focus();
 }
-function closeModal(){const root=document.querySelector('#modal-root');root.innerHTML='';document.body.classList.remove('modal-open');modal=null;if(returnFocus?.isConnected)returnFocus.focus();syncShellState();}
-function openModal(type,id){returnFocus=document.activeElement;modal={type,id};renderModal();}
-function dialog(title,body,footer='',wide=false){return `<div class="modal-backdrop"><section class="modal ${wide?'wide':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1"><header class="modal-header"><div><div class="eyebrow">LIFEOS · DEMO</div><h2 id="dialog-title">${esc(title)}</h2></div><button class="icon-button" data-action="close" aria-label="Close dialog">${icon('close')}</button></header><div class="modal-body">${body}</div>${footer?`<footer class="modal-footer">${footer}</footer>`:''}</section></div>`;}
+function closeModal(){const root=document.querySelector('#modal-root');root.innerHTML='';document.body.classList.remove('modal-open');modal=null;dialogError='';if(returnFocus?.isConnected)returnFocus.focus();syncShellState();}
+function openModal(type,id){returnFocus=document.activeElement;modal={type,id};dialogError='';renderModal();}
+function focusModal(){const dialog=document.querySelector('.modal');if(!dialog)return;const first=dialog.querySelector('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button[data-action]:not([data-action="close"]):not([disabled]),a[href],button:not([disabled])');(first||dialog).focus();}
+function showDialogError(message){dialogError=String(message||'The action could not be completed.');if(modal)renderModal();toast(dialogError);}
+function dialog(title,body,footer='',wide=false){return `<div class="modal-backdrop"><section class="modal ${wide?'wide':''} ${busy?'is-pending':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-description" aria-busy="${busy}" tabindex="-1"><header class="modal-header"><div><div class="eyebrow">LIFEOS · DEMO</div><h2 id="dialog-title">${esc(title)}</h2>${busy?'<p class="modal-pending" role="status" aria-live="polite">Working on this request…</p>':''}</div><button class="icon-button" data-action="close" aria-label="Close dialog">${icon('close')}</button></header>${dialogError?`<div class="form-error-summary modal-error" role="alert" tabindex="-1"><strong>We could not complete that action.</strong><p>${esc(dialogError)}</p></div>`:''}<div class="modal-body" id="dialog-description">${body}</div>${footer?`<footer class="modal-footer">${footer}</footer>`:''}</section></div>`;}
 async function switchToServer(action,code=''){
- if(busy)return;busy=true;
+  if(busy)return;busy=true;dialogError='';if(modal)renderModal();
  try{
   if(action==='restore')await restorePlayer(code);
   else if(action==='demo')await enterDemo();
@@ -94,19 +96,19 @@ async function switchToServer(action,code=''){
   if(result.mode!=='server')throw result.error||new Error('The account service is unavailable.');
   mode='server';identity=result.identity;state=result.state;bootstrapError=null;closeModal();render();toast(`Welcome, ${identity.player.displayName}. Your progress is connected.`);
   if(result.playerCode){oneTimePlayerCode=result.playerCode;openModal('player-code');}
- }catch(error){toast(error.message||'The account could not be opened.');}
- finally{busy=false;}
+  }catch(error){showDialogError(error.message||'The account could not be opened.');}
+  finally{busy=false;if(modal)renderModal();}
 }
 async function startNewAccount(){
- if(busy)return;busy=true;
+  if(busy)return;busy=true;dialogError='';if(modal)renderModal();
  try{
   await logoutPlayer();
   const result=await loadPlayerState({offlineState:state});
   if(result.mode!=='server')throw result.error||new Error('The account service is unavailable.');
   mode='server';identity=result.identity;state=result.state;bootstrapError=null;closeModal();render();toast(`Welcome, ${identity.player.displayName}. Your new account is connected.`);
   if(result.playerCode){oneTimePlayerCode=result.playerCode;openModal('player-code');}
- }catch(error){toast(error.message||'The new account could not be created.');}
- finally{busy=false;}
+  }catch(error){showDialogError(error.message||'The new account could not be created.');}
+  finally{busy=false;if(modal)renderModal();}
 }
 function renderModal(){
   if(!modal)return;const {type,id}=modal;let html='';
@@ -190,7 +192,7 @@ function renderModal(){
   }else if(type==='player-code'){
     html=dialog('Keep your Player Code safe',`<p>This is the only time your recovery code will be shown. Save it somewhere private so you can restore this grimoire on another browser.</p><div class="recovery-code" aria-label="Your Player Code">${esc(oneTimePlayerCode||'')}</div><p class="small-copy">Anyone with this code can access the account. The server stores only a secure digest.</p>`,`${btn('Copy code','copy-player-code')}${btn('I saved it','close',{primary:true,icon:'check'})}`);
   }
-  document.querySelector('#modal-root').innerHTML=html;document.body.classList.add('modal-open');bindModalForms();document.querySelector('.modal')?.focus();syncShellState();
+  document.querySelector('#modal-root').innerHTML=html;document.body.classList.add('modal-open');bindModalForms();syncShellState();focusModal();
 }
 async function sendChat(text){
   if(busy||!text.trim())return;
@@ -266,7 +268,7 @@ const actions={
  'recall-quest':id=>{skillIntelligence=completeRecallQuest(skillIntelligence,id);renderModal();toast('Recall complete. The demo freshness signal was refreshed; mastery and progress are unchanged.');},
  quest:id=>openModal('quest',id),close:closeModal,
  'start-assessment':id=>{modal={type:'assessment',id};renderModal();},
- 'create-assessment':subtype=>{if(busy)return;const q=state.quests.find(item=>item.id===modal?.id);if(!q)return;busy=true;void createAssessment({subtype,topic:q.topic||q.title,prompt:q.prompt||q.description||q.title,questId:q.id}).then(({assessment})=>{modal={...modal,assessment};renderModal();}).catch(error=>toast(error.message||'This assessment could not be prepared. You can complete the quest manually.')).finally(()=>{busy=false;});},
+  'create-assessment':subtype=>{if(busy)return;const q=state.quests.find(item=>item.id===modal?.id);if(!q)return;busy=true;dialogError='';renderModal();void createAssessment({subtype,topic:q.topic||q.title,prompt:q.prompt||q.description||q.title,questId:q.id}).then(({assessment})=>{modal={...modal,assessment};renderModal();}).catch(error=>showDialogError(error.message||'This assessment could not be prepared. You can complete the quest manually.')).finally(()=>{busy=false;if(modal)renderModal();});},
  'new-journey':()=>openModal('new-journey'), 'start-track':startTrack,
  'knowledge-track':id=>{view.track=id;view.concept=state.concepts.find(c=>c.trackId===id).id;view.search='';view.filter='all';navigate('knowledge');},
  'begin-quest':id=>mode==='server'?serverMutation(()=>startQuest(id),{message:'Your next chapter has begun.',keepModal:true}):(()=>{const q=state.quests.find(q=>q.id===id);q.status='in-progress';save();render();renderModal();toast('Your next chapter has begun.');})(),
@@ -333,14 +335,20 @@ function bindForms(){
   const input=document.querySelector('#chat-input');if(input)input.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();chat.requestSubmit();}};
   document.querySelectorAll('[data-pref]').forEach(el=>el.onchange=()=>{state.preferences[el.dataset.pref]=el.checked;save();toast('Preference saved.');});
   const memory=document.querySelector('#memory-form');if(memory)memory.onsubmit=e=>{e.preventDefault();const text=new FormData(memory).get('memory').trim();if(!text)return;state.memories.push({id:crypto.randomUUID(),text:text.slice(0,240),source:'Added by you · this session'});save();render();toast('A note added to your memory core.');};
-}
-function bindModalForms(){
-  const assessment=document.querySelector('#assessment-answer-form');if(assessment)assessment.onsubmit=async e=>{e.preventDefault();if(busy)return;const current=modal?.assessment;if(!current)return;let input;if(current.subtype==='QUIZ'){const formData=new FormData(assessment),count=Number(formData.get('question-count'));input={answers:Array.from({length:count},(_,index)=>Number(formData.get(`answer-${index}`)))};if(input.answers.some((answer,index)=>!formData.has(`answer-${index}`))){toast('Answer each question before submitting.');return;}}else input={answer:String(new FormData(assessment).get('answer')||'')};busy=true;try{const {result}=await submitAssessment(current.id,input);modal={...modal,result};await refreshServerState();renderModal();}catch(error){toast(error.message||'The assessment could not be submitted.');}finally{busy=false;}};
+ }
+ function clearFormErrors(form){form.querySelectorAll('.form-field-error').forEach(error=>error.remove());form.querySelector('.form-error-summary')?.remove();form.querySelectorAll('[aria-invalid="true"]').forEach(field=>{field.removeAttribute('aria-invalid');const ids=(field.getAttribute('aria-describedby')||'').split(/\s+/).filter(id=>id&&id!==field.dataset.errorId);ids.length?field.setAttribute('aria-describedby',ids.join(' ')):field.removeAttribute('aria-describedby');delete field.dataset.errorId;});}
+ function showFormErrors(form,errors){clearFormErrors(form);const summary=document.createElement('div');summary.className='form-error-summary';summary.id=`${form.id||'form'}-errors`;summary.tabIndex=-1;summary.setAttribute('role','alert');summary.innerHTML='<strong id="form-error-title">There is a problem</strong><ul></ul>';const list=summary.querySelector('ul');form.prepend(summary);errors.forEach(({field,message})=>{const target=field.closest('fieldset')||field;if(!target.id)target.id=`${form.id||'form'}-${field.name||'field'}-target`;const errorId=`${target.id}-error`,error=document.createElement('p');error.className='form-field-error';error.id=errorId;error.setAttribute('role','alert');error.textContent=message;target.insertAdjacentElement('afterend',error);field.setAttribute('aria-invalid','true');field.dataset.errorId=errorId;const ids=(field.getAttribute('aria-describedby')||'').split(/\s+/).filter(Boolean);field.setAttribute('aria-describedby',[...new Set([...ids,errorId])].join(' '));const item=document.createElement('li'),link=document.createElement('a');link.href=`#${target.id}`;link.textContent=message;item.append(link);list.append(item);});summary.focus();}
+ function validateRequiredForm(form,fields){const errors=fields.filter(({field,valid})=>!valid(field)).map(({field,message})=>({field,message}));if(errors.length)showFormErrors(form,errors);else clearFormErrors(form);return !errors.length;}
+ function validateAssessmentForm(form){const current=modal?.assessment;if(!current)return true;if(current.subtype==='QUIZ'){const errors=[...form.querySelectorAll('.assessment-question')].filter(fieldset=>!fieldset.querySelector('input:checked')).map(fieldset=>({field:fieldset.querySelector('input'),message:'Choose one answer for this question.'}));if(errors.length){showFormErrors(form,errors);return false;}clearFormErrors(form);return true;}const answer=form.querySelector('#assessment-answer');return validateRequiredForm(form,[{field:answer,valid:field=>Boolean(field?.value.trim()),message:'Enter an answer before requesting feedback.'}]);}
+ function bindModalForms(){
+  const assessment=document.querySelector('#assessment-answer-form');if(assessment)assessment.onsubmit=async e=>{e.preventDefault();if(busy)return;const current=modal?.assessment;if(!current)return;let input;if(current.subtype==='QUIZ'){const formData=new FormData(assessment),count=Number(formData.get('question-count'));input={answers:Array.from({length:count},(_,index)=>Number(formData.get(`answer-${index}`)))};if(input.answers.some((answer,index)=>!formData.has(`answer-${index}`))){toast('Answer each question before submitting.');return;}}else input={answer:String(new FormData(assessment).get('answer')||'')};busy=true;try{const {result}=await submitAssessment(current.id,input);modal={...modal,result};await refreshServerState();renderModal();}catch(error){showDialogError(error.message||'The assessment could not be submitted.');}finally{busy=false;if(modal)renderModal();}};
+  if(assessment){assessment.noValidate=true;assessment.addEventListener('submit',e=>{if(!validateAssessmentForm(assessment)){e.preventDefault();e.stopImmediatePropagation();}},true);}
   document.querySelectorAll('[data-check]').forEach(el=>el.onchange=()=>{const q=state.quests.find(q=>q.id===modal.id)||view.examplePlan?.chapters.flatMap(c=>c.quests).find(q=>q.id===modal.id),i=Number(el.dataset.check);if(mode==='server'){const stepId=q?.stepIds?.[i];if(!stepId){toast('This step cannot be updated yet.');renderModal();return;}void serverMutation(()=>updateQuestStep(q.id,stepId,el.checked),{keepModal:true});return;}q.checks=el.checked?[...new Set([...q.checks,i])]:q.checks.filter(x=>x!==i);save();});
   const notes=document.querySelector('#quest-notes');if(notes)notes.oninput=()=>{if(mode!=='server'){(state.quests.find(q=>q.id===modal.id)||view.examplePlan?.chapters.flatMap(c=>c.quests).find(q=>q.id===modal.id)).notes=notes.value;save();}};
   if(notes&&mode==='server')notes.onblur=()=>{const q=state.quests.find(q=>q.id===modal.id);if(q&&notes.value!==q.notes)void serverMutation(()=>updateQuestNote(q.id,notes.value),{keepModal:true});};
   const schedule=document.querySelector('#schedule-form');if(schedule)schedule.onsubmit=e=>{e.preventDefault();const minutes=Number(new FormData(schedule).get('minutes'));if(mode==='server'){const journey=activeJourney(state);if(journey)void previewPacingOnServer(journey,minutes);return;}commit(proposeSchedule(state,minutes));modal={type:'proposal'};renderModal();};
-  const restore=document.querySelector('#restore-player-form');if(restore)restore.onsubmit=e=>{e.preventDefault();switchToServer('restore',String(new FormData(restore).get('code')||'').trim());};
+  const restore=document.querySelector('#restore-player-form');if(restore){restore.noValidate=true;restore.onsubmit=e=>{e.preventDefault();const code=restore.elements.namedItem('code'),value=String(code?.value||'').trim(),rules=value?[{field:code,valid:field=>String(field?.value||'').trim().length>=10,message:'Player Code must contain at least 10 characters.'}]:[{field:code,valid:field=>Boolean(field?.value.trim()),message:'Enter your Player Code.'}];if(!validateRequiredForm(restore,rules))return;switchToServer('restore',value);};}
+  const plannerGoal=document.querySelector('#planner-goal');if(plannerGoal){plannerGoal.setAttribute('aria-label','Career goal');if(!document.querySelector('#planner-goal-help')){const help=document.createElement('p');help.id='planner-goal-help';help.className='small-copy';help.textContent='Describe the outcome you want to reach.';plannerGoal.insertAdjacentElement('afterend',help);}plannerGoal.setAttribute('aria-describedby','planner-goal-help');}
 }
 save();render();
 void loadPlayerState({offlineState:state}).then(result=>{

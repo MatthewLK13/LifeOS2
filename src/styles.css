@@ -628,12 +628,14 @@ main { min-height: 100vh; margin-left: var(--sidebar); padding: calc(var(--heade
    6. Dialogs, forms, and neutral compatibility primitives
    ========================================================================== */
 .modal-open { overflow: hidden; }
-.modal-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: var(--space-6); background: rgb(31 42 68 / .55); backdrop-filter: blur(3px); }
-.modal { width: min(590px, 100%); max-height: 90vh; overflow: auto; border: 1px solid var(--color-border-strong); border-radius: var(--radius-large); background: var(--color-surface); box-shadow: var(--shadow-dialog); }
+.modal-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; overflow: auto; padding: var(--space-6); background: rgb(31 42 68 / .55); backdrop-filter: blur(3px); overscroll-behavior: contain; }
+.modal { width: min(590px, 100%); max-height: 90vh; overflow: auto; overflow-wrap: anywhere; border: 1px solid var(--color-border-strong); border-radius: var(--radius-large); background: var(--color-surface); box-shadow: var(--shadow-dialog); overscroll-behavior: contain; }
 .modal.wide { width: min(760px, 100%); }
 .modal-header, .modal-footer { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-6); background: var(--color-surface); }
 .modal-header { border-bottom: 1px solid var(--color-border); }
 .modal-header h2 { margin-top: var(--space-1); }
+.modal-pending { margin-top: var(--space-2); color: var(--color-primary-text); font-size: var(--font-size-xs); }
+.modal.is-pending .modal-body, .modal.is-pending .modal-footer { opacity: .62; pointer-events: none; }
 .modal-footer { align-items: center; justify-content: flex-end; flex-wrap: wrap; border-top: 1px solid var(--color-border); }
 .modal-body { padding: var(--space-6); }
 .modal-body > p { margin: var(--space-4) 0; line-height: 1.6; }
@@ -675,6 +677,13 @@ main { min-height: 100vh; margin-left: var(--sidebar); padding: calc(var(--heade
 .profile-summary p { margin: 0; }
 .error, [aria-invalid='true'] { border-color: var(--color-error) !important; }
 .error-message { margin-top: var(--space-1); color: var(--color-error); font-size: var(--font-size-xs); }
+.form-error-summary { margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); border: 1px solid #E9B5B5; border-left: 3px solid var(--color-error); border-radius: var(--radius-control); background: #FCEEEE; color: var(--color-text); }
+.form-error-summary:focus { box-shadow: var(--focus-ring); }
+.form-error-summary strong { color: var(--color-error); }
+.form-error-summary ul { margin: var(--space-2) 0 0; padding-left: var(--space-5); }
+.form-error-summary a { color: var(--color-error); font-size: var(--font-size-sm); }
+.form-field-error { margin: var(--space-1) 0 var(--space-3); color: var(--color-error); font-size: var(--font-size-xs); }
+.modal-error { margin: var(--space-4) var(--space-6) 0; }
 
 /* Neutral compatibility styles for retained non-V2 dialogs/renderers. */
 .meta .xp-text, .xp-text { color: var(--color-primary-text); font-weight: 700; }

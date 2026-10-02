@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {loadPlayerState} from '../src/bootstrap.js';
+
+const appSource=fs.readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
 
 test('bootstrap reuses a valid session and loads its aggregate state',async()=>{
  const calls=[],result=await loadPlayerState({getCurrentPlayer:async()=>{calls.push('me');return {player:{id:'player-1'},isNew:false};},createPlayer:async()=>{calls.push('create');},getState:async()=>{calls.push('state');return {profile:{displayName:'Minh',preferences:{}},activeJourney:null,journeys:[],quests:[],knowledge:{domains:[],concepts:[],progress:[],ranks:[]},progress:{totalXp:0,dailyXp:0,streak:0,longestStreak:0},achievements:[],milestones:[],inventory:[]};}});
@@ -30,4 +33,13 @@ test('bootstrap uses the real API client when called without an injected client'
   assert.equal(result.mode,'server');
   assert.equal(result.identity.player.id,'player-3');
  }finally{globalThis.fetch=originalFetch;}
+});
+
+test('modal foundation exposes predictable focus, inert background, and error semantics',()=>{
+ assert.match(appSource,/aria-describedby="dialog-description"/);
+ assert.match(appSource,/function focusModal\(\)/);
+ assert.match(appSource,/appRoot\?\.toggleAttribute\('inert',Boolean\(modal\)\)/);
+ assert.match(appSource,/form-error-summary/);
+ assert.match(appSource,/aria-invalid/);
+ assert.match(appSource,/aria-busy="\$\{busy\}"/);
 });
