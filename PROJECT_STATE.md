@@ -40,6 +40,13 @@ Minh starts as a Backend Developer with 58% readiness, 72% evidence coverage, an
 
 Skill Check, Applied Trial, Recall Quest, Boss Quest, BKT explanation, recommendation updates, and Reset Demo are simulated locally. They do not award XP, persist evidence, or call a production API.
 
+## Frontend engine loop
+
+- `recomputeDerivedState()` derives coverage, readiness, confidence, gaps, Next Best Actions, campaign, Learning Hub, and Skill Passport from the same learner state.
+- Skill Check, Applied Trial, Recall, Boss Quest, career switching, learner presets, and Advisor pacing proposals are immutable transitions with `demoHistory` and `lastStateChange` feedback.
+- The local Career Advisor proposes pacing or explanations and requires explicit confirmation before changing demo preferences.
+- Backend Developer includes canonical and stale-evidence presets to demonstrate Same Career · Different Journey.
+
 ## Backend status
 
 Backend V1 remains frozen and is not part of this frontend milestone. Backend V2, BKT persistence, evidence ledger, production scoring, recommendation ML, and provider APIs are deferred.

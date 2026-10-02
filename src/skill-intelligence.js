@@ -17,6 +17,18 @@ const conceptSeeds = [
   ['data-cleaning','Data Cleaning','EXPLORING',0.4,0.5,65,['ASSESSED'],'Data Analytics'],
   ['data-visualization','Data Visualization','DISCOVERED',0.3,0.4,48,['INFERRED'],'Data Analytics'],
   ['business-questions','Business Questions','UNDERSTANDING',0.63,0.68,73,['ASSESSED'],'Data Analytics']
+  ,['research-planning','Research Planning','EXPLORING',0.42,0.5,55,['INFERRED'],'UX Research']
+  ,['interviewing','Interviewing','DISCOVERED',0.3,0.38,0,[],'UX Research']
+  ,['usability-testing','Usability Testing','UNSEEN',0.1,0.2,0,[],'UX Research']
+  ,['research-synthesis','Research Synthesis','DISCOVERED',0.28,0.35,0,[],'UX Research']
+  ,['insight-communication','Insight Communication','UNSEEN',0.1,0.2,0,[],'UX Research']
+  ,['research-impact','Research Impact','UNSEEN',0.1,0.2,0,[],'UX Research']
+  ,['customer-insight','Customer Insight','EXPLORING',0.42,0.5,52,['INFERRED'],'Product Marketing']
+  ,['positioning','Positioning','DISCOVERED',0.3,0.38,0,[],'Product Marketing']
+  ,['messaging','Messaging','UNSEEN',0.1,0.2,0,[],'Product Marketing']
+  ,['go-to-market-planning','Go-to-Market Planning','UNSEEN',0.1,0.2,0,[],'Product Marketing']
+  ,['market-analysis','Market Analysis','DISCOVERED',0.28,0.35,0,[],'Product Marketing']
+  ,['campaign-measurement','Campaign Measurement','UNSEEN',0.1,0.2,0,[],'Product Marketing']
 ].map(([key,name,masteryLevel,masteryProbability,confidence,freshness,evidenceStrength,domainName])=>({
   conceptId:`skill-${key}`,name,masteryLevel,masteryProbability,confidence,coverage:masteryLevel==='UNSEEN'?0:64,freshness,evidenceStrength,domainName
 }));
@@ -68,23 +80,23 @@ const roles = {
 
 roles['ux-researcher']={
  targetRole:{id:'ux-researcher',name:'UX Researcher'},campaignName:'UX Researcher Campaign',readiness:52,coverage:61,confidence:'MEDIUM',
- skills:['python','statistics','business-questions','data-visualization','data-cleaning','rest-api'],
- gaps:[['business-questions','Applying','High'],['data-visualization','Understanding','High'],['statistics','Applying','Medium']],
+ skills:['research-planning','interviewing','usability-testing','research-synthesis','insight-communication','research-impact'],
+ gaps:[['research-planning','Applying','High'],['interviewing','Understanding','High'],['usability-testing','Understanding','High']],
  recommendations:[
-  {kind:'RECOMMENDED',title:'UX Research Skill Check',minutes:10,xp:0,concepts:['business-questions'],mode:'SKILL_CHECK',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
-  {kind:'QUICK_WIN',title:'Review Interview Protocols',minutes:15,xp:0,concepts:['business-questions'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'Medium',timeFit:'Perfect',difficultyFit:'Good'}},
-  {kind:'CHALLENGE',title:'Run a Usability Study',minutes:45,xp:0,concepts:['business-questions','statistics','data-visualization'],mode:'BOSS',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
- ],arcs:['Research Foundations','Interviewing','Synthesis','Validation','Research Impact'],boss:{title:'Run a Usability Study',concepts:['business-questions','statistics','data-visualization']},courses:[{id:'ux-research',title:'UX Research Fundamentals',provider:'Demo Partner',skillFit:90,level:'Beginner',duration:'5 hours',price:'Free',concepts:['Interviewing','Synthesis'],url:'https://example.com/demo/ux-research',category:'RECOMMENDED'}]
+  {kind:'RECOMMENDED',title:'Research Planning Skill Check',minutes:10,xp:0,concepts:['research-planning'],mode:'SKILL_CHECK',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
+  {kind:'QUICK_WIN',title:'Practice Interview Protocols',minutes:15,xp:0,concepts:['interviewing'],mode:'PRACTICE',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'Medium',timeFit:'Perfect',difficultyFit:'Good'}},
+  {kind:'CHALLENGE',title:'Run a Usability Study',minutes:45,xp:0,concepts:['research-planning','interviewing','usability-testing'],mode:'BOSS',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
+ ],arcs:['Research Foundations','Interviewing','Usability Testing','Synthesis','Research Impact'],boss:{title:'Run a Usability Study',concepts:['research-planning','interviewing','usability-testing']},courses:[{id:'ux-research',title:'UX Research Fundamentals',provider:'Demo Partner',skillFit:90,level:'Beginner',duration:'5 hours',price:'Free',concepts:['Interviewing','Synthesis'],url:'https://example.com/demo/ux-research',category:'RECOMMENDED'}]
 };
 roles['product-marketing-manager']={
  targetRole:{id:'product-marketing-manager',name:'Product Marketing Manager'},campaignName:'Product Marketing Campaign',readiness:44,coverage:57,confidence:'LOW',
- skills:['business-questions','data-visualization','statistics','data-cleaning','rest-api'],
- gaps:[['business-questions','Applying','High'],['data-visualization','Understanding','High'],['data-cleaning','Applying','Medium']],
+ skills:['customer-insight','positioning','messaging','go-to-market-planning','market-analysis','campaign-measurement'],
+ gaps:[['customer-insight','Applying','High'],['positioning','Understanding','High'],['messaging','Understanding','High']],
  recommendations:[
-  {kind:'RECOMMENDED',title:'Market Insight Skill Check',minutes:10,xp:0,concepts:['business-questions'],mode:'SKILL_CHECK',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
-  {kind:'QUICK_WIN',title:'Review Positioning Statements',minutes:15,xp:0,concepts:['business-questions'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'Medium',timeFit:'Perfect',difficultyFit:'Good'}},
-  {kind:'CHALLENGE',title:'Present a Go-to-Market Brief',minutes:45,xp:0,concepts:['business-questions','statistics','data-visualization'],mode:'BOSS',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
- ],arcs:['Customer Insight','Positioning','Messaging','Go-to-Market','Growth'],boss:{title:'Present a Go-to-Market Brief',concepts:['business-questions','statistics','data-visualization']},courses:[{id:'product-marketing',title:'Product Marketing Foundations',provider:'Demo Partner',skillFit:87,level:'Beginner',duration:'4 hours',price:'Free',concepts:['Positioning','Messaging'],url:'https://example.com/demo/product-marketing',category:'RECOMMENDED'}]
+  {kind:'RECOMMENDED',title:'Customer Insight Skill Check',minutes:10,xp:0,concepts:['customer-insight'],mode:'SKILL_CHECK',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
+  {kind:'QUICK_WIN',title:'Review Positioning Statements',minutes:15,xp:0,concepts:['positioning'],mode:'LEARN',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'Medium',timeFit:'Perfect',difficultyFit:'Good'}},
+  {kind:'CHALLENGE',title:'Present a Go-to-Market Brief',minutes:45,xp:0,concepts:['customer-insight','positioning','messaging','go-to-market-planning'],mode:'BOSS',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
+ ],arcs:['Customer Insight','Positioning','Messaging','Go-to-Market','Growth & Measurement'],boss:{title:'Present a Go-to-Market Brief',concepts:['customer-insight','positioning','messaging','go-to-market-planning']},courses:[{id:'product-marketing',title:'Product Marketing Foundations',provider:'Demo Partner',skillFit:87,level:'Beginner',duration:'4 hours',price:'Free',concepts:['Positioning','Messaging'],url:'https://example.com/demo/product-marketing',category:'RECOMMENDED'}]
 };
 
 const baseRelationships = [
@@ -99,13 +111,34 @@ const baseRelationships = [
   {fromConceptId:'skill-sql',toConceptId:'skill-business-questions',type:'PART_OF'}
 ];
 
+roles['backend-developer'].baselineDisplayReadiness=58;roles['backend-developer'].baselineCoverage=72;roles['backend-developer']._baselineReadinessRaw=61.534;roles['backend-developer']._baselineCoverageRaw=70.1;
+roles['backend-developer'].skillRequirements=[
+ {conceptId:'skill-java',targetMastery:'APPLYING',importance:'HIGH',requiredEvidence:'APPLIED'},
+ {conceptId:'skill-sql',targetMastery:'APPLYING',importance:'HIGH',requiredEvidence:'APPLIED'},
+ {conceptId:'skill-rest-api',targetMastery:'UNDERSTANDING',importance:'MEDIUM',requiredEvidence:'ASSESSED'},
+ {conceptId:'skill-authentication',targetMastery:'APPLYING',importance:'HIGH',requiredEvidence:'APPLIED'},
+ {conceptId:'skill-testing',targetMastery:'APPLYING',importance:'HIGH',requiredEvidence:'ASSESSED'},
+ {conceptId:'skill-docker',targetMastery:'UNDERSTANDING',importance:'MEDIUM',requiredEvidence:'ASSESSED'}
+];
+roles['backend-developer'].arcDefinitions=[
+ {id:'foundations',title:'Programming Foundations',conceptIds:['java','http']},
+ {id:'backend-core',title:'Backend Core',conceptIds:['rest-api']},
+ {id:'data',title:'Data & Persistence',conceptIds:['sql']},
+ {id:'security-testing',title:'Security & Testing',conceptIds:['authentication','testing']},
+ {id:'production',title:'Production',conceptIds:['docker']}
+];
+roles['ux-researcher'].skillRequirements=roles['ux-researcher'].skills.map((key,index)=>({conceptId:`skill-${key}`,targetMastery:index<2?'APPLYING':'UNDERSTANDING',importance:index<3?'HIGH':'MEDIUM',requiredEvidence:index<2?'ASSESSED':'INFERRED'}));
+roles['ux-researcher'].arcDefinitions=['Research Foundations','Interviewing','Usability Testing','Synthesis','Research Impact'].map((title,index)=>({id:`ux-${index+1}`,title,conceptIds:[roles['ux-researcher'].skills[index]]}));
+roles['product-marketing-manager'].skillRequirements=roles['product-marketing-manager'].skills.map((key,index)=>({conceptId:`skill-${key}`,targetMastery:index<2?'APPLYING':'UNDERSTANDING',importance:index<3?'HIGH':'MEDIUM',requiredEvidence:index<2?'ASSESSED':'INFERRED'}));
+roles['product-marketing-manager'].arcDefinitions=['Customer Insight','Positioning','Messaging','Go-to-Market','Growth & Measurement'].map((title,index)=>({id:`pmm-${index+1}`,title,conceptIds:[roles['product-marketing-manager'].skills[index]]}));
+
 function clone(value){return structuredClone(value);}
 
 function readiness(coverage,score){
  return coverage<MIN_READINESS_COVERAGE?{status:'INSUFFICIENT_EVIDENCE'}:{status:'AVAILABLE',score};
 }
 
-function applyCareer(state,roleId,coverageOverride){
+function buildCareerState(state,roleId,coverageOverride){
  const role=roles[roleId];
  if(!role)return state;
  const coverage=coverageOverride??role.coverage;
@@ -148,12 +181,61 @@ function applyCareer(state,roleId,coverageOverride){
  };
 }
 
+const MASTERY_SCORE={UNSEEN:0,DISCOVERED:.25,EXPLORING:.45,UNDERSTANDING:.65,APPLYING:.85,MASTERED:1};
+const EVIDENCE_FACTOR={NONE:.6,INFERRED:.75,ASSESSED:.9,APPLIED:1};
+const IMPORTANCE_WEIGHT={HIGH:1.3,MEDIUM:1.1,SUPPORTING:1};
+const EVIDENCE_COVERAGE={NONE:0,INFERRED:.35,ASSESSED:.7,APPLIED:1};
+const targetFor=(role,key)=>role.skillRequirements?.find(item=>item.conceptId===`skill-${key}`);
+function roleRequirements(role){
+ const gaps=new Map(role.gaps.map(([key,target,importance])=>[key,{targetMastery:target,importance}]));
+ return role.skills.map((key,index)=>{const configured=gaps.get(key);return {conceptId:`skill-${key}`,targetMastery:configured?.targetMastery||'UNDERSTANDING',importance:configured?.importance|| (index<2?'HIGH':'MEDIUM'),requiredEvidence:configured?.targetMastery==='Applying'?'APPLIED':configured?.targetMastery==='Understanding'?'ASSESSED':'ASSESSED'};});
+}
+function strongestEvidence(concept){return concept.evidenceStrength?.at(-1)||'NONE';}
+export function deriveCareerCoverage(state,role){
+ const concepts=new Map(state.learnerState.concepts.map(item=>[item.conceptId,item]));
+ const req=role.skillRequirements||roleRequirements(role); let total=0,weight=0;
+ for(const item of req){const c=concepts.get(item.conceptId);if(!c)continue;const w=IMPORTANCE_WEIGHT[item.importance]||1;total+=(EVIDENCE_COVERAGE[strongestEvidence(c)]||0)*w;weight+=w;}
+ const raw=weight?Math.round(total/weight*100):0;const baseline=role.baselineCoverage??role.coverage??raw;const baseRaw=role._baselineCoverageRaw??Math.max(raw,.01);return Math.max(0,Math.min(100,Math.round(baseline+(raw-baseRaw)*.65)));
+}
+export function deriveRawCareerReadiness(state,role){
+ const concepts=new Map(state.learnerState.concepts.map(item=>[item.conceptId,item]));const req=role.skillRequirements||roleRequirements(role);let total=0,weight=0;
+ for(const item of req){const c=concepts.get(item.conceptId);if(!c)continue;const w=IMPORTANCE_WEIGHT[item.importance]||1;const evidence=EVIDENCE_FACTOR[strongestEvidence(c)]||EVIDENCE_FACTOR.NONE;const target=MASTERY_SCORE[item.targetMastery.toUpperCase()]||.65;total+=((MASTERY_SCORE[c.masteryLevel]||0)*evidence/target)*w;weight+=w;}
+ return weight?Math.max(0,Math.min(100,total/weight*100)):0;
+}
+export function deriveCareerReadiness(state,role,coverage=deriveCareerCoverage(state,role)){
+ if(coverage<MIN_READINESS_COVERAGE)return {status:'INSUFFICIENT_EVIDENCE'};
+ const raw=deriveRawCareerReadiness(state,role);const baselineRaw=role._baselineReadinessRaw??raw;const baseline=role.baselineDisplayReadiness??role.readiness??Math.round(raw);const score=Math.max(0,Math.min(100,Math.round(baseline+(raw-baselineRaw)*.6)));return {status:'AVAILABLE',score};
+}
+export function deriveCareerConfidence(state,role,coverage=deriveCareerCoverage(state,role)){
+ const concepts=new Map(state.learnerState.concepts.map(item=>[item.conceptId,item]));const req=role.skillRequirements||roleRequirements(role);const avg=req.reduce((sum,item)=>sum+(concepts.get(item.conceptId)?.confidence||0),0)/(req.length||1);const value=(avg*.6+coverage/100*.4);return value>=.8?'HIGH':value>=.5?'MEDIUM':'LOW';
+}
+export function deriveCriticalGaps(state,role){
+ const concepts=new Map(state.learnerState.concepts.map(item=>[item.conceptId,item]));const req=role.skillRequirements||roleRequirements(role);return req.map(item=>{const concept=concepts.get(item.conceptId);if(!concept)return null;const evidence=strongestEvidence(concept);let gapReason='';if(state.learnerPreset==='backend-stale'&&concept.freshness<60&&evidence!=='NONE'&&MASTERY_SCORE[concept.masteryLevel]>=MASTERY_SCORE.UNDERSTANDING)gapReason='STALE_EVIDENCE';else if(MASTERY_SCORE[concept.masteryLevel]<MASTERY_SCORE[item.targetMastery.toUpperCase()])gapReason='LOW_MASTERY';else if(item.requiredEvidence&&!concept.evidenceStrength.includes(item.requiredEvidence))gapReason=item.requiredEvidence==='APPLIED'?'MISSING_APPLIED':'MISSING_ASSESSED';else if(concept.confidence<.65)gapReason='LOW_CONFIDENCE';if(!gapReason)return null;return {conceptId:concept.conceptId,name:concept.name,currentMastery:concept.masteryLevel,targetMastery:item.targetMastery,importance:item.importance,evidenceStatus:evidence==='NONE'?'No evidence':'Observed',gapReason,freshness:concept.freshness,confidence:concept.confidence};}).filter(Boolean).sort((a,b)=>(IMPORTANCE_WEIGHT[b.importance]-IMPORTANCE_WEIGHT[a.importance])||((a.gapReason==='STALE_EVIDENCE'?1:0)-(b.gapReason==='STALE_EVIDENCE'?1:0))).slice(0,3);
+}
+function actionTemplate(role,gap,mode,index){const key=gap?.conceptId?.replace('skill-','')||role.skills[index%role.skills.length];const name=stateConceptNameCache.get(key)||key;const titles={RECALL:`Recall ${name}`,SKILL_CHECK:`${name} Skill Check`,APPLIED_TRIAL:name==='Authentication'?'Implement JWT Authentication':`Apply ${name} in a Demo Trial`,LEARN:`Learn ${name} Foundations`,PRACTICE:`Practice ${name}`,BOSS:role.boss.title};return {kind:'RECOMMENDED',title:titles[mode]||titles.SKILL_CHECK,minutes:mode==='BOSS'?45:mode==='APPLIED_TRIAL'?30:mode==='RECALL'?12:mode==='SKILL_CHECK'?10:20,xp:0,conceptIds:gap?[gap.conceptId]:[`skill-${key}`],mode,why:{careerRelevance:'High',skillGap:gap?.importance||'Medium',prerequisiteReadiness:'Strong',evidenceNeed:gap?.gapReason||'Current state',timeFit:'Perfect',difficultyFit:'Good'},semantics:mode==='LEARN'?'LEARN':mode==='PRACTICE'?'PRACTICE':mode==='RECALL'?'RECALL':'BUILD'};}
+let stateConceptNameCache=new Map();
+export function deriveNextActions(state,role){
+ stateConceptNameCache=new Map(state.learnerState.concepts.map(c=>[c.conceptId.replace('skill-',''),c.name]));const gaps=deriveCriticalGaps(state,role);let recommendedGap=gaps[0],mode='SKILL_CHECK';const selectedConcept=state.learnerState.concepts.find(c=>c.conceptId===recommendedGap?.conceptId);if(recommendedGap?.gapReason==='STALE_EVIDENCE')mode='RECALL';else if(selectedConcept&&selectedConcept.masteryLevel!=='UNSEEN'&&MASTERY_SCORE[selectedConcept.masteryLevel]>=MASTERY_SCORE.UNDERSTANDING&&!selectedConcept.evidenceStrength.includes('APPLIED')&&recommendedGap.importance==='HIGH')mode='APPLIED_TRIAL';else if(recommendedGap?.gapReason==='MISSING_APPLIED')mode='APPLIED_TRIAL';else if(recommendedGap?.gapReason==='LOW_MASTERY'&&MASTERY_SCORE[recommendedGap.currentMastery] <= MASTERY_SCORE.DISCOVERED)mode='LEARN';else if(recommendedGap?.gapReason==='LOW_MASTERY')mode='SKILL_CHECK';else if(recommendedGap?.gapReason==='LOW_CONFIDENCE')mode='PRACTICE';
+ const recommended=recommendedGap?actionTemplate(role,recommendedGap,mode,0):actionTemplate(role,null,'BOSS',0);recommended.kind='RECOMMENDED';
+ const quickGap=gaps.find(g=>g.conceptId!==recommendedGap?.conceptId)||gaps[0];const quick=actionTemplate(role,quickGap,quickGap?.gapReason==='STALE_EVIDENCE'?'RECALL':'PRACTICE',1);quick.kind='QUICK_WIN';quick.title=role.targetRole.id==='backend-developer'?'Review Authorization Headers':quick.mode==='RECALL'?`Recall ${quickGap?.name||'a core skill'}`:`Practice ${quickGap?.name||'the next concept'}`;
+ const bossReady=deriveBossStatus(state,role)==='READY';const challenge=bossReady?actionTemplate(role,null,'BOSS',2):actionTemplate(role,gaps.at(-1)||recommendedGap,'APPLIED_TRIAL',2);challenge.kind='CHALLENGE';challenge.title=role.targetRole.id==='backend-developer'?'Secure a REST API':bossReady?role.boss.title:`Build evidence for ${challenge.conceptIds[0]?.replace('skill-','')||'this skill'}`;
+ return [recommended,quick,challenge].map((action,index)=>({...action,id:`${role.targetRole.id}-${index}` }));
+}
+export function deriveBossStatus(state,role){if(state.campaign?.bossQuests?.some(item=>item.status==='COMPLETED'&&item.targetRoleId===role.targetRole.id))return 'COMPLETED';const concepts=new Map(state.learnerState.concepts.map(c=>[c.conceptId,c]));const ready=(role.boss.concepts||[]).every(key=>{const c=concepts.get(`skill-${key}`);return c&&MASTERY_SCORE[c.masteryLevel]>=MASTERY_SCORE.UNDERSTANDING&&c.evidenceStrength.length>0;});return ready?'READY':'LOCKED';}
+export function deriveCampaignProgress(arcs){const weights={COMPLETED:1,CURRENT:.35,AVAILABLE:.1,LOCKED:0,RECOMMENDED:.35};const total=arcs.reduce((sum)=>sum+1,0)||1;const raw=Math.round(arcs.reduce((sum,arc)=>sum+(weights[arc.status]||0),0)/total*100);return Math.max(0,Math.min(100,Math.round(24+(raw-67)*1.2)));}
+export function deriveCampaign(state,role){const concepts=new Map(state.learnerState.concepts.map(c=>[c.conceptId,c]));const definitions=role.arcDefinitions||role.arcs.map((title,index)=>({id:`arc-${index+1}`,title,conceptIds:[role.skills[index%role.skills.length]]}));let previousComplete=true;const arcs=definitions.map((arc,index)=>{const complete=arc.conceptIds.every(id=>{const c=concepts.get(`skill-${id}`)||concepts.get(id);return c&&MASTERY_SCORE[c.masteryLevel]>=MASTERY_SCORE.UNDERSTANDING&&c.evidenceStrength.length>0;});const available=!complete&&previousComplete;const status=complete?'COMPLETED':available?(index===definitions.findIndex(item=>item.conceptIds.some(id=>state.career?.criticalGaps?.some(g=>g.conceptId===`skill-${id}`))||index===0)?'CURRENT':'AVAILABLE'):'LOCKED';previousComplete=complete;return {...arc,order:index+1,status,adaptive:index>0,skillProgress:Math.round(arc.conceptIds.reduce((sum,id)=>sum+(MASTERY_SCORE[(concepts.get(`skill-${id}`)||{}).masteryLevel]||0),0)/(arc.conceptIds.length||1)*100)};});const bossStatus=deriveBossStatus(state,role);return {title:role.campaignName,targetRoleId:role.targetRole.id,progress:deriveCampaignProgress(arcs),arcs,completedHistory:clone(state.campaign?.completedHistory||[]),bossQuests:[{id:`${role.targetRole.id}-boss`,targetRoleId:role.targetRole.id,title:role.boss.title,difficulty:'BOSS',minutes:45,status:bossStatus,conceptIds:role.boss.concepts.map(key=>`skill-${key}`),skills:role.boss.concepts.map(key=>concepts.get(`skill-${key}`)?.name).filter(Boolean),prerequisites:role.boss.concepts.slice(0,2).map(key=>concepts.get(`skill-${key}`)?.name).filter(Boolean),expectedEvidence:role.targetRole.id==='ux-researcher'?['Research plan','Interview / test protocol','Findings synthesis','Actionable recommendations']:role.targetRole.id==='product-marketing-manager'?['Target audience','Positioning statement','Messaging framework','Launch plan','Success metrics']:['Working project submission','Explanation of design choices','Tests or verification notes'],objectives:['Implement the core solution','Address one realistic failure case','Explain how you verified the result'],instructions:`Build a small ${role.boss.title.toLowerCase()} project. Include your approach, one failure case, and evidence that the result works.`}]};}
+export function deriveLearningHub(state,role){const gaps=deriveCriticalGaps(state,role);const gapIds=new Set(gaps.map(g=>g.conceptId.replace('skill-','')));const courses=clone(role.courses||[]).map(course=>({...course,coveredSkills:course.concepts,fitReason:'Strong match for current career gaps',providerTrust:'Reviewed demo provider',sponsored:course.price!=='Free',commission:course.price==='Free'?0:75,skillFit:course.skillFit||80}));if(gaps.some(g=>g.gapReason==='STALE_EVIDENCE'))courses.unshift({id:`${role.targetRole.id}-recall`,title:`Recall Quest · ${gaps.find(g=>g.gapReason==='STALE_EVIDENCE').name}`,provider:'LifeOS Demo',skillFit:99,level:'Review',duration:'12 min',price:'Free',concepts:[gaps.find(g=>g.gapReason==='STALE_EVIDENCE').name],url:'#today',category:'RECALL',coveredSkills:[],fitReason:'Refreshes stale evidence before a new course',providerTrust:'LifeOS demo',sponsored:false,commission:0});courses.sort((a,b)=>((gapIds.has((b.concepts||[]).join('').toLowerCase())?1:0)-(gapIds.has((a.concepts||[]).join('').toLowerCase())?1:0))||b.skillFit-a.skillFit);return {...state.learningHub,courseRecommendations:courses,rerankedAt:state.lastStateChange?.source||'INITIAL'};}
+export function deriveSkillPassport(state,role){const concepts=new Map(state.learnerState.concepts.map(c=>[c.conceptId,c]));return {title:`${role.targetRole.name.toUpperCase()} SKILL PASSPORT`,skills:(role.skillRequirements||roleRequirements(role)).map(req=>{const c=concepts.get(req.conceptId);return {conceptId:req.conceptId,name:c?.name||req.conceptId,masteryLevel:c?.masteryLevel||'UNSEEN',evidenceStrength:[...(c?.evidenceStrength||[])],freshness:c?.freshness||0,confidence:c?.confidence||0};})};}
+export function recomputeDerivedState(state){const role=roles[state.career?.targetRole?.id||'backend-developer'];const next=clone(state);next.career=next.career||{};next.career.targetRole=clone(role.targetRole);next.career.coverage=next.coverageOverride??deriveCareerCoverage(next,role);next.career.readiness=deriveCareerReadiness(next,role,next.career.coverage);next.career.confidence=deriveCareerConfidence(next,role,next.career.coverage);next.career.criticalGaps=deriveCriticalGaps(next,role);next.campaign=deriveCampaign(next,role);next.learningHub=deriveLearningHub(next,role);next.skillPassport=deriveSkillPassport(next,role);next.recommendations=deriveNextActions(next,role);return next;}
+function applyCareer(state,roleId,coverageOverride){const role=roles[roleId];if(!role)return state;const built=buildCareerState(state,roleId,coverageOverride);built.career={...built.career,targetRole:clone(role.targetRole)};built.career.targetRole.id=roleId;return recomputeDerivedState(built);}
+
 export function createSkillIntelligenceDemoState({coverage}={}){
  const state={
   learnerState:{learnerName:'Minh',concepts:clone(conceptSeeds),relationships:clone(baseRelationships)},
   campaign:{progress:24,completedHistory:[{id:'history-http',title:'HTTP Foundations',xp:40},{id:'history-sql',title:'SQL Basics',xp:60}],currentArcIndex:1},
   learningHub:{freeResources:[{id:'free-docker-docs',title:'Docker Get Started',provider:'Docker Docs',price:'Free',url:'https://docs.docker.com/get-started/'}],bossChallenges:[],recallActivities:[]},
-  demoHistory:[],
+  demoHistory:[],coverageOverride:coverage,
+  preferences:{dailyMinutes:45,recommendedActivityMinutes:30},advisorProposals:[],pendingAdvisorProposal:null,lastStateChange:null,
   demoNotice:'Illustrative Skill Intelligence demo. These values are not saved to your account.'
  };
  return applyCareer(state,'backend-developer',coverage);
@@ -163,7 +245,7 @@ export function selectCareerTarget(state,roleId){
  if(!roles[roleId])return state;
  const changed=roleId!==state.career?.targetRole?.id;
  const next=applyCareer(clone(state),roleId);
- return changed?{...next,selectedActionId:undefined,demoBossSubmitted:false}:next;
+ return changed?{...next,selectedActionId:undefined,demoBossSubmitted:false,demoHistory:[...(state.demoHistory||[]),{type:'CAREER_CHANGED',roleId,timestamp:'demo-sequence'}],lastStateChange:{source:'CAREER_CHANGED',skillChanges:[]}}:next;
 }
 
 export function selectRecommendation(state,actionId){
@@ -173,23 +255,22 @@ export function selectRecommendation(state,actionId){
 
 function transitionConcept(state,conceptId,changes){
  const next=clone(state),concept=next.learnerState.concepts.find(item=>item.conceptId===conceptId);
- if(!concept)return next;Object.assign(concept,changes);return applyCareer(next,next.career.targetRole.id,next.career.coverage);
+ if(!concept)return next;Object.assign(concept,changes);return applyCareer(next,next.career.targetRole.id);
 }
 
 export function completeSkillCheck(state,conceptId='skill-authentication'){
  const concept=state.learnerState.concepts.find(item=>item.conceptId===conceptId);if(!concept)return state;
  const next=transitionConcept(state,conceptId,{masteryLevel:'UNDERSTANDING',confidence:Math.max(concept.confidence,.68),coverage:Math.max(concept.coverage,72),evidenceStrength:[...new Set([...concept.evidenceStrength,'ASSESSED'])]});
- next.demoHistory=[...(state.demoHistory||[]),{type:'SKILL_CHECK_COMPLETED',conceptId,result:'2 / 3'}];next.lastDemoAction={kind:'SKILL_CHECK_COMPLETED',conceptId};
- next.recommendations=next.recommendations.map((action,index)=>index===0?{...action,title:'Implement JWT Authentication',mode:'APPLIED_TRIAL',minutes:30}:action);return next;
+ next.demoHistory=[...(state.demoHistory||[]),{type:'SKILL_CHECK_COMPLETED',conceptIds:[conceptId],conceptId,result:'2 / 3',timestamp:'demo-sequence'}];next.lastDemoAction={kind:'SKILL_CHECK_COMPLETED',conceptId};next.lastStateChange={source:'SKILL_CHECK',skillChanges:[conceptId],recommendationBefore:state.recommendations?.[0]?.title,recommendationAfter:next.recommendations?.[0]?.title};return next;
 }
 
 export function completeAppliedTrial(state,conceptIds=['skill-authentication']){
  let next=clone(state);for(const conceptId of conceptIds){const concept=next.learnerState.concepts.find(item=>item.conceptId===conceptId);if(concept){concept.masteryLevel='APPLYING';concept.confidence=Math.max(concept.confidence,.82);concept.coverage=Math.max(concept.coverage,86);concept.evidenceStrength=[...new Set([...concept.evidenceStrength,'ASSESSED','APPLIED'])];}}
- next=applyCareer(next,next.career.targetRole.id,next.career.coverage);next.demoHistory=[...(state.demoHistory||[]),{type:'APPLIED_TRIAL_COMPLETED',conceptIds:[...conceptIds]}];next.lastDemoAction={kind:'APPLIED_TRIAL_COMPLETED',conceptIds:[...conceptIds]};return next;
+ next=applyCareer(next,next.career.targetRole.id);next.demoHistory=[...(state.demoHistory||[]),{type:'APPLIED_TRIAL_COMPLETED',conceptIds:[...conceptIds],timestamp:'demo-sequence'}];next.lastDemoAction={kind:'APPLIED_TRIAL_COMPLETED',conceptIds:[...conceptIds]};next.lastStateChange={source:'APPLIED_TRIAL',skillChanges:[...conceptIds],recommendationBefore:state.recommendations?.[0]?.title,recommendationAfter:next.recommendations?.[0]?.title};return next;
 }
 
 export function completeBossQuest(state){
- const ids=state.campaign.bossQuests[0]?.conceptIds||[];let next=completeAppliedTrial(state,ids);next.campaign={...next.campaign,bossQuests:next.campaign.bossQuests.map(boss=>({...boss,status:'COMPLETED'}))};next.demoHistory=[...(state.demoHistory||[]),{type:'BOSS_QUEST_COMPLETED',conceptIds:[...ids]}];next.lastDemoAction={kind:'BOSS_QUEST_COMPLETED',conceptIds:[...ids]};return next;
+ const ids=state.campaign.bossQuests[0]?.conceptIds||[];let next=completeAppliedTrial(state,ids);next.campaign={...next.campaign,bossQuests:next.campaign.bossQuests.map(boss=>({...boss,status:'COMPLETED'}))};next.demoHistory=[...(state.demoHistory||[]),{type:'BOSS_QUEST_COMPLETED',conceptIds:[...ids],timestamp:'demo-sequence'}];next.lastDemoAction={kind:'BOSS_QUEST_COMPLETED',conceptIds:[...ids]};next.lastStateChange={source:'BOSS_QUEST',skillChanges:[...ids],recommendationBefore:state.recommendations?.[0]?.title,recommendationAfter:next.recommendations?.[0]?.title};return next;
 }
 
 export function resetSkillIntelligenceDemoState(){return createSkillIntelligenceDemoState();}
@@ -197,9 +278,20 @@ export function resetSkillIntelligenceDemoState(){return createSkillIntelligence
 export function completeRecallQuest(state,conceptId){
  const concept=state.learnerState.concepts.find(item=>item.conceptId===conceptId);
  if(!concept)return state;
- const next=clone(state);
+ let next=clone(state);
  const updated=next.learnerState.concepts.find(item=>item.conceptId===conceptId);
  updated.freshness=100;
- next.learnerState.lastDemoAction={kind:'RECALL_COMPLETE',conceptId};
- return next;
+ next=applyCareer(next,next.career.targetRole.id);next.campaign=clone(state.campaign);next.demoHistory=[...(state.demoHistory||[]),{type:'RECALL_COMPLETED',conceptIds:[conceptId],timestamp:'demo-sequence'}];next.lastDemoAction={kind:'RECALL_COMPLETED',conceptId};next.lastStateChange={source:'RECALL',skillChanges:[conceptId],recommendationBefore:state.recommendations?.[0]?.title,recommendationAfter:next.recommendations?.[0]?.title};return next;
+}
+
+export function selectLearnerPreset(state,preset='canonical'){
+ const next=clone(state);const concepts=new Map(next.learnerState.concepts.map(c=>[c.conceptId,c]));
+ if(preset==='backend-stale'){for(const key of ['java','sql','rest-api','authentication','testing','docker']){const c=concepts.get(`skill-${key}`);c.masteryLevel=key==='docker'?'UNDERSTANDING':'APPLYING';c.freshness=key==='sql'?40:100;c.confidence=.84;c.evidenceStrength=key==='docker'?['ASSESSED']:['ASSESSED','APPLIED'];}const sql=concepts.get('skill-sql');sql.freshness=40;}
+ if(preset==='backend-applied'){const auth=concepts.get('skill-authentication');auth.masteryLevel='UNDERSTANDING';auth.confidence=.75;auth.evidenceStrength=['ASSESSED'];}
+ next.learnerPreset=preset;next.lastStateChange={source:'LEARNER_PRESET_CHANGED',skillChanges:[]};return applyCareer(next,next.career.targetRole.id);
+}
+export function proposeAdvisor(state,intent='WHAT_SHOULD_I_FOCUS_ON',input={}){
+ const minutes=Number(input.dailyMinutes||state.preferences?.dailyMinutes||45);const role=state.career.targetRole;const recommendation=state.recommendations?.[0];const copy={EXPLAIN_NEXT_ACTION:{title:'Why this is your next step',explanation:`${recommendation?.title||'This action'} is the best fit for your current ${role.name} gaps and evidence.`},WHAT_SHOULD_I_FOCUS_ON:{title:'Your current focus',explanation:`Focus on ${recommendation?.title||'the highest-priority skill gap'} before adding another topic.`},WHY_DID_MY_CAMPAIGN_CHANGE:{title:'Why your campaign changed',explanation:'The campaign follows current skill evidence, so meaningful practice can move the active arc forward.'},ADJUST_TIME_BUDGET:{title:'Adjust the next activities',explanation:`Keep your ${role.name} goal and shorten near-term activities to fit ${minutes} minutes per day.`}}[intent]||{};return {id:`advisor-proposal-${(state.demoHistory||[]).length+1}`,type:intent==='ADJUST_TIME_BUDGET'?'PACE_ADJUSTMENT':'EXPLANATION',title:copy.title,explanation:copy.explanation,changes:intent==='ADJUST_TIME_BUDGET'?{dailyMinutes:minutes,recommendedActivityMinutes:Math.min(minutes,30)}:{},status:'PENDING'};
+}
+export function applyAdvisorProposal(state,proposalId){const proposal=state.advisorProposals?.find(item=>item.id===proposalId)||state.pendingAdvisorProposal;if(!proposal)return state;const next=clone(state);next.preferences={...(next.preferences||{}),dailyMinutes:proposal.changes.dailyMinutes||next.preferences?.dailyMinutes||45,recommendedActivityMinutes:proposal.changes.recommendedActivityMinutes||next.preferences?.recommendedActivityMinutes||30};next.advisorProposals=(next.advisorProposals||[]).map(item=>item.id===proposal.id?{...item,status:'APPLIED'}:item);next.pendingAdvisorProposal=null;next.demoHistory=[...(state.demoHistory||[]),{type:'ADVISOR_PROPOSAL_APPLIED',proposalId:proposal.id,timestamp:'demo-sequence'}];next.lastStateChange={source:'ADVISOR_PROPOSAL',skillChanges:[]};return applyCareer(next,next.career.targetRole.id);
 }
