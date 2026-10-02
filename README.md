@@ -10,9 +10,9 @@
 | 4 | **Trần Minh Quang** |
 | 5 | **Trần Quốc Tuấn** |
 
-# LifeOS Grimoire — Interactive Demo
+# LifeOS — Career Development Demo
 
-An English desktop learning demo based on the supplied parchment Grimoire designs. Includes Python, Data Structures & Algorithms, Java, Object-Oriented Programming, JavaScript, AI Fundamentals, and RAG Engineering.
+An English desktop frontend demo for a multi-domain career-development game. It demonstrates the Skill Intelligence loop: career goal, current skill state, gap, next action, evidence, and updated skill state.
 
 ## Start
 
@@ -33,26 +33,23 @@ If `node` is not on your Windows PATH, the runtime available in this workspace i
 & 'C:\Users\Admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe' server.mjs
 ```
 
-## What works
+## Current V2 frontend demo
 
-- Today: sample RAG journey, daily quests, rest day, XP, character level, seven learning domains.
-- Companion: scripted conversation collects domain, background and daily minutes; builds a roadmap preview; activates only after confirmation.
-- Roadmap: clickable chapter graph and list, activity details, multiple journey selector, preview/apply/cancel pacing changes, finish a journey.
-- My Knowledge: 248 concepts, seven branches, SVG connections, node selection, zoom/fit, drag, search, status filter, list view and sample evidence.
-- Quest details: start, checklist, notes, external resource, self-confirm completion; rewards are idempotent and capped at 120 XP/day.
-- Progress: activity ledger, level, sample domain ranks and milestones.
-- Settings: streak visibility, consent preference, reduced motion, local memory notes, reset.
-- Offline demo progress persists in this browser's localStorage. When configured, account mode loads player state from the API and sends quest and journey changes to the server.
+- **Today**: Backend Developer readiness, evidence coverage, three critical gaps, and three next actions.
+- **My Knowledge**: a connected skill graph with semantic edges, skill detail, evidence signals, and freshness-only Recall.
+- **Career Campaign**: completed history, adaptive career arcs, and the multi-skill Secure a REST API Boss Quest.
+- **Learning Hub**: free learning resources, practice activities, and recall prompts across multiple careers.
+- **Deterministic interactions**: Skill Check, Applied Trial, Boss Quest, BKT explanation, career switching, profile menu, and Reset Demo.
+
+The frontend demo runs on deterministic mock data and stores its transitions locally. The backend and production APIs are unchanged and are not required for the presentation flow.
 
 ## Suggested 4-minute presentation
 
-1. **Today**: introduce the parchment design, profile and seven knowledge branches.
-2. **Companion**: select “I want to learn Java” → “I am a beginner” → “30 minutes a day”.
-3. Inspect the generated ten-chapter roadmap, then **Start this journey**.
-4. Open a chapter and a quest → **Start quest** → optionally check steps/write notes → **I have completed this activity**. Show updated XP.
-5. **My Knowledge**: select Java; click a node, inspect sample evidence, try search and zoom. Return to all branches to see the domain overview.
-6. **Roadmap**: **Adjust my schedule** → 15 minutes → preview → apply. Future activities are split into smaller parts without increasing their total XP; ongoing work is preserved.
-7. **Progress**: explain that XP is activity and domain rank is separate illustrative evidence.
+1. **Today**: show Backend Developer readiness, evidence coverage, and the three action choices.
+2. Start **Authentication Skill Check** and complete the deterministic 2 / 3 result.
+3. Open **My Knowledge** to show Authentication moving to Understanding, then open “How is this estimated?”.
+4. Open **Career Campaign** and inspect the Secure a REST API Boss Quest.
+5. Finish in **Learning Hub**, then use **Reset Demo** to restore the canonical Minh scenario.
 
 For another presentation, use **Settings → Reset demo data → Reset demo**. This restores the original sample profile. Use one active tab during a presentation to avoid last-write-wins local saves from multiple tabs.
 

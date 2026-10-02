@@ -23,14 +23,14 @@ const conceptSeeds = [
 
 const roles = {
   'backend-developer':{
-    targetRole:{id:'backend-developer',name:'Backend Developer Intern'},
+    targetRole:{id:'backend-developer',name:'Backend Developer'},
     campaignName:'Backend Developer Campaign',readiness:58,coverage:72,confidence:'MEDIUM',
     skills:['java','sql','rest-api','authentication','testing','docker'],
     gaps:[['authentication','Applying','High'],['testing','Applying','High'],['docker','Understanding','Medium']],
     recommendations:[
-      {kind:'RECOMMENDED',title:'Implement JWT Authentication',minutes:30,xp:20,concepts:['authentication','rest-api'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
+      {kind:'RECOMMENDED',title:'Authentication Skill Check',minutes:10,xp:0,concepts:['authentication'],mode:'SKILL_CHECK',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
       {kind:'QUICK_WIN',title:'Review Authorization Headers',minutes:15,xp:10,concepts:['authentication'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'Medium',timeFit:'Perfect',difficultyFit:'Good'}},
-      {kind:'CHALLENGE',title:'Design Access + Refresh Token Flow',minutes:45,xp:25,concepts:['authentication','rest-api','testing'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
+      {kind:'CHALLENGE',title:'Secure a REST API',minutes:45,xp:0,concepts:['authentication','rest-api','testing'],mode:'BOSS',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
     ],
     arcs:['Programming Foundations','Backend Core','Data & Persistence','Security & Testing','Production'],
     boss:{title:'Secure a REST API',concepts:['java','rest-api','authentication','testing']},
@@ -42,9 +42,9 @@ const roles = {
     skills:['python','statistics','data-preparation','machine-learning','model-evaluation','sql'],
     gaps:[['data-preparation','Applying','High'],['model-evaluation','Understanding','High'],['machine-learning','Applying','High']],
     recommendations:[
-      {kind:'RECOMMENDED',title:'Prepare a Clean Training Dataset',minutes:30,xp:20,concepts:['data-preparation','machine-learning'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
+      {kind:'RECOMMENDED',title:'Prepare a Clean Training Dataset',minutes:30,xp:0,concepts:['data-preparation','machine-learning'],mode:'APPLIED_TRIAL',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
       {kind:'QUICK_WIN',title:'Review Train / Test Splits',minutes:15,xp:10,concepts:['model-evaluation'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'Medium',timeFit:'Perfect',difficultyFit:'Good'}},
-      {kind:'CHALLENGE',title:'Evaluate a Model Across Skewed Data',minutes:45,xp:25,concepts:['statistics','model-evaluation'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
+      {kind:'CHALLENGE',title:'Evaluate a Model Across Skewed Data',minutes:45,xp:0,concepts:['statistics','model-evaluation'],mode:'BOSS',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
     ],
     arcs:['Python & Data','Statistics','Machine Learning','Model Evaluation','Applied Systems'],
     boss:{title:'Build and Evaluate a Prediction Service',concepts:['python','data-preparation','machine-learning','model-evaluation']},
@@ -56,14 +56,35 @@ const roles = {
     skills:['sql','python','statistics','data-cleaning','data-visualization','business-questions'],
     gaps:[['data-cleaning','Applying','High'],['statistics','Applying','High'],['data-visualization','Applying','Medium']],
     recommendations:[
-      {kind:'RECOMMENDED',title:'Clean a Messy Sales Dataset',minutes:30,xp:20,concepts:['data-cleaning','sql'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
+      {kind:'RECOMMENDED',title:'Clean a Messy Sales Dataset',minutes:30,xp:0,concepts:['data-cleaning','sql'],mode:'APPLIED_TRIAL',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
       {kind:'QUICK_WIN',title:'Review SQL NULL Handling',minutes:15,xp:10,concepts:['sql','data-cleaning'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'Medium',timeFit:'Perfect',difficultyFit:'Good'}},
-      {kind:'CHALLENGE',title:'Present a Data-backed Recommendation',minutes:45,xp:25,concepts:['statistics','data-visualization','business-questions'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
+      {kind:'CHALLENGE',title:'Present a Data-backed Recommendation',minutes:45,xp:0,concepts:['statistics','data-visualization','business-questions'],mode:'BOSS',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
     ],
     arcs:['Questions & Data','SQL Foundations','Data Preparation','Analysis & Statistics','Communication'],
     boss:{title:'Turn Sales Data into a Decision',concepts:['sql','data-cleaning','statistics','data-visualization']},
     courses:[{id:'data-analysis',title:'Practical Data Analysis',provider:'Demo Partner',skillFit:89,level:'Beginner',duration:'6 hours',price:'Free',concepts:['Data Cleaning','Exploratory Analysis','Data Stories'],url:'https://example.com/demo/practical-data-analysis',category:'RECOMMENDED'}]
   }
+};
+
+roles['ux-researcher']={
+ targetRole:{id:'ux-researcher',name:'UX Researcher'},campaignName:'UX Researcher Campaign',readiness:52,coverage:61,confidence:'MEDIUM',
+ skills:['python','statistics','business-questions','data-visualization','data-cleaning','rest-api'],
+ gaps:[['business-questions','Applying','High'],['data-visualization','Understanding','High'],['statistics','Applying','Medium']],
+ recommendations:[
+  {kind:'RECOMMENDED',title:'UX Research Skill Check',minutes:10,xp:0,concepts:['business-questions'],mode:'SKILL_CHECK',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
+  {kind:'QUICK_WIN',title:'Review Interview Protocols',minutes:15,xp:0,concepts:['business-questions'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'Medium',timeFit:'Perfect',difficultyFit:'Good'}},
+  {kind:'CHALLENGE',title:'Run a Usability Study',minutes:45,xp:0,concepts:['business-questions','statistics','data-visualization'],mode:'BOSS',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
+ ],arcs:['Research Foundations','Interviewing','Synthesis','Validation','Research Impact'],boss:{title:'Run a Usability Study',concepts:['business-questions','statistics','data-visualization']},courses:[{id:'ux-research',title:'UX Research Fundamentals',provider:'Demo Partner',skillFit:90,level:'Beginner',duration:'5 hours',price:'Free',concepts:['Interviewing','Synthesis'],url:'https://example.com/demo/ux-research',category:'RECOMMENDED'}]
+};
+roles['product-marketing-manager']={
+ targetRole:{id:'product-marketing-manager',name:'Product Marketing Manager'},campaignName:'Product Marketing Campaign',readiness:44,coverage:57,confidence:'LOW',
+ skills:['business-questions','data-visualization','statistics','data-cleaning','rest-api'],
+ gaps:[['business-questions','Applying','High'],['data-visualization','Understanding','High'],['data-cleaning','Applying','Medium']],
+ recommendations:[
+  {kind:'RECOMMENDED',title:'Market Insight Skill Check',minutes:10,xp:0,concepts:['business-questions'],mode:'SKILL_CHECK',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Strong',evidenceNeed:'High',timeFit:'Perfect',difficultyFit:'Good'}},
+  {kind:'QUICK_WIN',title:'Review Positioning Statements',minutes:15,xp:0,concepts:['business-questions'],why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'Medium',timeFit:'Perfect',difficultyFit:'Good'}},
+  {kind:'CHALLENGE',title:'Present a Go-to-Market Brief',minutes:45,xp:0,concepts:['business-questions','statistics','data-visualization'],mode:'BOSS',why:{careerRelevance:'High',skillGap:'High',prerequisiteReadiness:'Good',evidenceNeed:'High',timeFit:'Good',difficultyFit:'Stretch'}}
+ ],arcs:['Customer Insight','Positioning','Messaging','Go-to-Market','Growth'],boss:{title:'Present a Go-to-Market Brief',concepts:['business-questions','statistics','data-visualization']},courses:[{id:'product-marketing',title:'Product Marketing Foundations',provider:'Demo Partner',skillFit:87,level:'Beginner',duration:'4 hours',price:'Free',concepts:['Positioning','Messaging'],url:'https://example.com/demo/product-marketing',category:'RECOMMENDED'}]
 };
 
 const baseRelationships = [
@@ -132,6 +153,7 @@ export function createSkillIntelligenceDemoState({coverage}={}){
   learnerState:{learnerName:'Minh',concepts:clone(conceptSeeds),relationships:clone(baseRelationships)},
   campaign:{progress:24,completedHistory:[{id:'history-http',title:'HTTP Foundations',xp:40},{id:'history-sql',title:'SQL Basics',xp:60}],currentArcIndex:1},
   learningHub:{freeResources:[{id:'free-docker-docs',title:'Docker Get Started',provider:'Docker Docs',price:'Free',url:'https://docs.docker.com/get-started/'}],bossChallenges:[],recallActivities:[]},
+  demoHistory:[],
   demoNotice:'Illustrative Skill Intelligence demo. These values are not saved to your account.'
  };
  return applyCareer(state,'backend-developer',coverage);
@@ -143,6 +165,34 @@ export function selectCareerTarget(state,roleId){
  const next=applyCareer(clone(state),roleId);
  return changed?{...next,selectedActionId:undefined,demoBossSubmitted:false}:next;
 }
+
+export function selectRecommendation(state,actionId){
+ const action=state.recommendations.find(item=>item.id===actionId);if(!action)return state;
+ return {...clone(state),selectedActionId:actionId};
+}
+
+function transitionConcept(state,conceptId,changes){
+ const next=clone(state),concept=next.learnerState.concepts.find(item=>item.conceptId===conceptId);
+ if(!concept)return next;Object.assign(concept,changes);return applyCareer(next,next.career.targetRole.id,next.career.coverage);
+}
+
+export function completeSkillCheck(state,conceptId='skill-authentication'){
+ const concept=state.learnerState.concepts.find(item=>item.conceptId===conceptId);if(!concept)return state;
+ const next=transitionConcept(state,conceptId,{masteryLevel:'UNDERSTANDING',confidence:Math.max(concept.confidence,.68),coverage:Math.max(concept.coverage,72),evidenceStrength:[...new Set([...concept.evidenceStrength,'ASSESSED'])]});
+ next.demoHistory=[...(state.demoHistory||[]),{type:'SKILL_CHECK_COMPLETED',conceptId,result:'2 / 3'}];next.lastDemoAction={kind:'SKILL_CHECK_COMPLETED',conceptId};
+ next.recommendations=next.recommendations.map((action,index)=>index===0?{...action,title:'Implement JWT Authentication',mode:'APPLIED_TRIAL',minutes:30}:action);return next;
+}
+
+export function completeAppliedTrial(state,conceptIds=['skill-authentication']){
+ let next=clone(state);for(const conceptId of conceptIds){const concept=next.learnerState.concepts.find(item=>item.conceptId===conceptId);if(concept){concept.masteryLevel='APPLYING';concept.confidence=Math.max(concept.confidence,.82);concept.coverage=Math.max(concept.coverage,86);concept.evidenceStrength=[...new Set([...concept.evidenceStrength,'ASSESSED','APPLIED'])];}}
+ next=applyCareer(next,next.career.targetRole.id,next.career.coverage);next.demoHistory=[...(state.demoHistory||[]),{type:'APPLIED_TRIAL_COMPLETED',conceptIds:[...conceptIds]}];next.lastDemoAction={kind:'APPLIED_TRIAL_COMPLETED',conceptIds:[...conceptIds]};return next;
+}
+
+export function completeBossQuest(state){
+ const ids=state.campaign.bossQuests[0]?.conceptIds||[];let next=completeAppliedTrial(state,ids);next.campaign={...next.campaign,bossQuests:next.campaign.bossQuests.map(boss=>({...boss,status:'COMPLETED'}))};next.demoHistory=[...(state.demoHistory||[]),{type:'BOSS_QUEST_COMPLETED',conceptIds:[...ids]}];next.lastDemoAction={kind:'BOSS_QUEST_COMPLETED',conceptIds:[...ids]};return next;
+}
+
+export function resetSkillIntelligenceDemoState(){return createSkillIntelligenceDemoState();}
 
 export function completeRecallQuest(state,conceptId){
  const concept=state.learnerState.concepts.find(item=>item.conceptId===conceptId);

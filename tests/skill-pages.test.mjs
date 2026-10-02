@@ -5,7 +5,7 @@ import {renderTodaySkillPage,renderRecommendationExplanation,renderCareerCampaig
 
 test('Today renders the target career, readiness, coverage, and explicit demo notice',()=>{
  const html=renderTodaySkillPage(createSkillIntelligenceDemoState(),{demoPreview:true});
- assert.match(html,/Backend Developer Intern/);
+ assert.match(html,/Backend Developer/);
  assert.match(html,/58%/);
  assert.match(html,/72%/);
  assert.match(html,/Illustrative Skill Intelligence demo/);
@@ -24,19 +24,19 @@ test('Today presents the three critical gaps as clickable Knowledge details',()=
 
 test('Today renders all three action choices in order and marks only Recommended',()=>{
  const html=renderTodaySkillPage(createSkillIntelligenceDemoState());
- const positions=['Implement JWT Authentication','Review Authorization Headers','Design Access \+ Refresh Token Flow'].map(title=>html.indexOf(title));
+ const positions=['Authentication Skill Check','Review Authorization Headers','Secure a REST API'].map(title=>html.indexOf(title));
  assert.ok(positions.every(position=>position>=0));
  assert.ok(positions[0]<positions[1]&&positions[1]<positions[2]);
  assert.equal((html.match(/data-recommendation="RECOMMENDED"/g)||[]).length,1);
  assert.equal((html.match(/data-action="recommendation-detail"/g)||[]).length,3);
- assert.equal((html.match(/Choose this action/g)||[]).length,3);
+ assert.equal((html.match(/data-action="choose-recommendation"/g)||[]).length,3);
 });
 
 test('Today visibly reflects a selected action without implying completion',()=>{
  const vm={...createSkillIntelligenceDemoState(),selectedActionId:'backend-developer-1'};
  const html=renderTodaySkillPage(vm);
  assert.match(html,/Selected for your next step/);
- assert.match(html,/No mastery or XP changes until an activity is completed/);
+  assert.match(html,/Skill changes appear only after you complete a demo activity/);
 });
 
 test('readiness hides a percentage when evidence coverage is insufficient',()=>{
@@ -58,9 +58,9 @@ test('recommendation explanation translates all six factors into readable labels
 test('Career Campaign separates preserved history from adaptive future arcs',()=>{
  const vm=createSkillIntelligenceDemoState();
  const html=renderCareerCampaignPage(vm);
- assert.match(html,/PRESERVED HISTORY/);
+ assert.match(html,/COMPLETED/);
  assert.match(html,/HTTP Foundations/);
- assert.match(html,/ADAPTIVE FUTURE/);
+ assert.match(html,/NEXT IN THE CAMPAIGN/);
  assert.match(html,/Security &amp; Testing|Security & Testing/);
  assert.match(html,/Secure a REST API/);
 });
@@ -68,7 +68,7 @@ test('Career Campaign separates preserved history from adaptive future arcs',()=
 test('Boss Quest explains objectives, skills, prerequisites, evidence, mock submission, and cosmetic rewards',()=>{
  const vm=createSkillIntelligenceDemoState();
  const html=renderBossQuestDetail(vm.campaign.bossQuests[0]);
- for(const label of ['Multi-skill checkpoint','Prerequisites','Expected evidence','Demo submission','Potential rewards','mastery'])assert.match(html,new RegExp(label,'i'));
+ for(const label of ['Boss Quest','Requirements','Expected evidence','Demo submission','skill profile'])assert.match(html,new RegExp(label,'i'));
  assert.match(html,/Working project submission/);
 });
 

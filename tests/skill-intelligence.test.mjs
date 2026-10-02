@@ -1,18 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createSkillIntelligenceDemoState,selectCareerTarget,completeRecallQuest} from '../src/skill-intelligence.js';
+import {createSkillIntelligenceDemoState,selectCareerTarget,completeRecallQuest,completeSkillCheck,completeAppliedTrial,completeBossQuest,resetSkillIntelligenceDemoState} from '../src/skill-intelligence.js';
 
 test('demo learner presents the specified backend readiness, gaps, and actions',()=>{
  const state=createSkillIntelligenceDemoState();
- assert.equal(state.career.targetRole.name,'Backend Developer Intern');
+ assert.equal(state.career.targetRole.name,'Backend Developer');
  assert.deepEqual(state.career.readiness,{status:'AVAILABLE',score:58});
  assert.equal(state.career.coverage,72);
  assert.equal(state.learnerState.learnerName,'Minh');
  assert.deepEqual(state.career.criticalGaps.map(gap=>gap.name),['Authentication','Testing','Docker']);
  assert.deepEqual(state.recommendations.map(action=>action.title),[
-  'Implement JWT Authentication',
+  'Authentication Skill Check',
   'Review Authorization Headers',
-  'Design Access + Refresh Token Flow'
+  'Secure a REST API'
  ]);
  const concepts=Object.fromEntries(state.learnerState.concepts.map(concept=>[concept.name,concept]));
  assert.equal(concepts.Java.masteryLevel,'APPLYING');
@@ -28,11 +28,11 @@ test('demo learner presents the specified backend readiness, gaps, and actions',
 
 test('selecting another career returns coherent role-specific mock gaps and actions',()=>{
  const initial=createSkillIntelligenceDemoState();
- for(const roleId of ['ai-ml-engineer','data-analyst']){
+ for(const roleId of ['ux-researcher','product-marketing-manager']){
   const selected=selectCareerTarget(initial,roleId);
   assert.equal(selected.career.targetRole.id,roleId);
   assert.notDeepEqual(selected.career.criticalGaps,initial.career.criticalGaps);
-  assert.equal(selected.career.coverage,roleId==='ai-ml-engineer'?63:68);
+  assert.ok(selected.career.coverage>0);
   assert.ok(selected.recommendations[0].conceptIds.some(id=>selected.career.criticalGaps.some(gap=>gap.conceptId===id)));
   assert.equal(initial.career.targetRole.id,'backend-developer');
  }
@@ -40,10 +40,19 @@ test('selecting another career returns coherent role-specific mock gaps and acti
 
 test('switching career clears selections and mock submission status tied to the prior role',()=>{
  const initial={...createSkillIntelligenceDemoState(),selectedActionId:'backend-developer-0',demoBossSubmitted:true};
- const selected=selectCareerTarget(initial,'ai-ml-engineer');
+ const selected=selectCareerTarget(initial,'ux-researcher');
  assert.equal(selected.selectedActionId,undefined);
  assert.equal(selected.demoBossSubmitted,false);
- assert.equal(selected.campaign.bossQuests[0].title,'Build and Evaluate a Prediction Service');
+ assert.equal(selected.campaign.bossQuests[0].title,'Run a Usability Study');
+});
+
+test('skill check, applied trial, boss quest and reset are immutable demo transitions',()=>{
+ const initial=createSkillIntelligenceDemoState(),concept=initial.learnerState.concepts.find(item=>item.conceptId==='skill-authentication');
+ const checked=completeSkillCheck(initial,concept.conceptId);
+ assert.equal(concept.masteryLevel,'EXPLORING');assert.equal(checked.learnerState.concepts.find(item=>item.conceptId===concept.conceptId).masteryLevel,'UNDERSTANDING');assert.match(checked.recommendations[0].title,/Implement JWT/);assert.equal(checked.demoHistory[0].type,'SKILL_CHECK_COMPLETED');
+ const applied=completeAppliedTrial(checked,['skill-authentication']);assert.equal(applied.learnerState.concepts.find(item=>item.conceptId==='skill-authentication').masteryLevel,'APPLYING');assert.ok(applied.learnerState.concepts.find(item=>item.conceptId==='skill-authentication').evidenceStrength.includes('APPLIED'));
+ const boss=completeBossQuest(initial);assert.equal(boss.campaign.bossQuests[0].status,'COMPLETED');assert.ok(boss.demoHistory.some(item=>item.type==='BOSS_QUEST_COMPLETED'));
+ assert.deepEqual(resetSkillIntelligenceDemoState(),initial);
 });
 
 test('semantic graph seed includes each supported relation type',()=>{

@@ -8,6 +8,6 @@ for(const file of ['app','pages','companion','graph','ui','data','state','curric
 const output=path.join(root,'dist');await mkdir(output,{recursive:true});
 for(const file of ['index.html','src','shared/catalog','assets'])await cp(path.join(root,file),path.join(output,file),{recursive:true});
 await cp(path.join(root,'src','service-worker.js'),path.join(output,'service-worker.js'));
-await writeFile(path.join(output,'build-info.json'),JSON.stringify({name:'LifeOS Grimoire Demo',builtAt:new Date().toISOString(),mode:'static'},null,2));
+await writeFile(path.join(output,'build-info.json'),JSON.stringify({name:'LifeOS Career Development Demo',builtAt:new Date().toISOString(),mode:'static'},null,2));
 const html=await readFile(path.join(output,'index.html'),'utf8');if(!html.includes('/src/app.js'))throw new Error('Missing application entry point');
 console.log('Build complete: dist/ · Static, dependency-free demo. Serve this directory at the root of a local HTTP server.');
