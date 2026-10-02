@@ -104,6 +104,24 @@ test('Career Skill Map contains only target-role skills and shows their semantic
  assert.match(html,/prerequisite/i);
 });
 
+test('Knowledge provides graph and accessible list parity with search and mastery filtering',()=>{
+ const vm=createSkillIntelligenceDemoState();
+ const list=renderSkillKnowledgePage(vm,{view:'list',search:'docker',filter:'UNSEEN'});
+ assert.match(list,/knowledge-view-list/);
+ assert.match(list,/knowledge-controls/);
+ assert.match(list,/id="concept-search"/);
+ assert.match(list,/id="status-filter"/);
+ assert.match(list,/role="list"/);
+ assert.match(list,/skill-list-row/);
+ assert.match(list,/Open Docker skill details/);
+ assert.match(list,/aria-pressed="false"/);
+ const graph=renderSkillKnowledgePage(vm,{view:'graph'});
+ assert.match(graph,/knowledge-view-graph/);
+ assert.match(graph,/Connected career skill graph/);
+ assert.match(graph,/aria-pressed="true"/);
+ assert.match(graph,/HOW CONCEPTS CONNECT/);
+});
+
 test('skill detail presents evidence sources without exposing evidence text and offers freshness-only Recall',()=>{
  const vm=createSkillIntelligenceDemoState();
  const concept=vm.learnerState.concepts.find(item=>item.conceptId==='skill-docker');
