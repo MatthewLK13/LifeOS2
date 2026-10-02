@@ -32,6 +32,12 @@ test('Today renders all three action choices in order and marks only Recommended
  assert.equal((html.match(/data-action="choose-recommendation"/g)||[]).length,3);
 });
 
+test('Today separates readiness, gaps, evidence, and next-action presentation',()=>{
+ const html=renderTodaySkillPage(createSkillIntelligenceDemoState());
+ for(const marker of ['readiness-title','readiness-context','gap-title','Expected evidence','action-section-note'])assert.match(html,new RegExp(marker));
+ assert.equal((html.match(/class="action-evidence"/g)||[]).length,3);
+});
+
 test('Today visibly reflects a selected action without implying completion',()=>{
  const vm={...createSkillIntelligenceDemoState(),selectedActionId:'backend-developer-1'};
  const html=renderTodaySkillPage(vm);
@@ -63,6 +69,12 @@ test('Career Campaign separates preserved history from adaptive future arcs',()=
  assert.match(html,/NEXT IN THE CAMPAIGN/);
  assert.match(html,/Security &amp; Testing|Security & Testing/);
  assert.match(html,/Secure a REST API/);
+});
+
+test('Career Campaign makes progress, quest evidence, and Boss Quest state explicit',()=>{
+ const html=renderCareerCampaignPage(createSkillIntelligenceDemoState());
+ for(const marker of ['Campaign progress','campaign-quest-evidence','Evidence after completion','BOSS QUEST · MULTI-SKILL CHECKPOINT','boss-detail'])assert.match(html,new RegExp(marker,'i'));
+ assert.ok((html.match(/data-action="quest-detail"/g)||[]).length>=3);
 });
 
 test('Boss Quest explains objectives, skills, prerequisites, evidence, mock submission, and cosmetic rewards',()=>{
