@@ -14,7 +14,7 @@ import {getQuestById,getDemoSubmission} from './demo-quests.js';
 
 let storageWarning=false,raw=null;
 try{raw=localStorage.getItem(STORAGE_KEY);}catch{storageWarning=true;}
-let state=hydrate(raw),mode='offline',identity=null,oneTimePlayerCode=null,bootstrapError=null,busy=false,modal=null,returnFocus=null,toastTimer,disposeGraph,chatAbort=null,retryMessage='',aiRoadmapFlow=null;
+let state=hydrate(raw),mode='offline',identity=null,oneTimePlayerCode=null,bootstrapError=null,busy=false,modal=null,returnFocus=null,toastTimer,disposeGraph,chatAbort=null,retryMessage='',aiRoadmapFlow=null,drawerOpen=false,drawerReturnFocus=null;
 let skillIntelligence=createSkillIntelligenceDemoState();
 let planner=createPlannerState();
 const nav=[['today','book','Today'],['knowledge','tree','My Knowledge'],['roadmap','compass','Career Campaign'],['learning','book','Learning Hub']];
@@ -53,16 +53,36 @@ async function enablePush(){
  try{const registration=await navigator.serviceWorker.register('/service-worker.js'),{publicKey}=await getVapidPublicKey(),subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:vapidBytes(publicKey)});await savePushSubscription(subscription.toJSON());await refreshServerState();toast('Daily reminders are enabled.');}catch(error){toast(error.message||'Push reminders could not be enabled.');}
 }
 async function disablePush(){try{const registration=await navigator.serviceWorker.getRegistration('/'),subscription=await registration?.pushManager.getSubscription();if(subscription){await deletePushSubscription(subscription.endpoint);await subscription.unsubscribe();}await refreshServerState();toast('Daily reminders are disabled.');}catch(error){toast(error.message||'The reminder could not be disabled.');}}
-function navigate(id){if(!nav.some(([n])=>n===id))id='today';if(chatAbort)chatAbort.abort();closeModal();page=id;location.hash=id;view.view='graph';render();window.scrollTo({top:0});}
+function navigate(id){if(!nav.some(([n])=>n===id))id='today';if(chatAbort)chatAbort.abort();if(drawerOpen){drawerOpen=false;drawerReturnFocus=null;}closeModal();page=id;location.hash=id;view.view='graph';render();window.scrollTo({top:0});}
 function render(){
   disposeGraph?.();disposeGraph=null;
   const j=activeJourney(state);
   document.title=`${nav.find(([id])=>id===page)[2]} · LifeOS`;
   const displayName=state.profile?.displayName||'Minh';
   app.innerHTML=`<header class="topbar"><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle navigation">${icon('menu')}</button><a class="brand" href="#today"><span class="brand-mark">L</span><span><strong>LIFEOS</strong><small>Career development demo</small></span></a><div class="topbar-center">Understand your skills. Move toward your goal.</div><div class="topbar-right"><span class="demo-indicator"><i></i> ${mode==='server'?'ACCOUNT SAVED':'DEMO DATA'}</span><button class="profile-mini profile-button" data-action="profile-menu" aria-haspopup="menu" aria-expanded="false"><span><strong>${esc(displayName)}</strong><small>Career Starter</small></span><span class="avatar-letter">${esc(displayName[0]||'M')}</span></button></div></header><aside class="sidebar" aria-label="Main navigation"><div class="shell-intro"><div class="eyebrow">LIFEOS</div><h3>Career clarity,<br>one step at a time.</h3><span>Frontend V2 demo</span></div><nav>${nav.map(([id,i,label])=>`<a href="#${id}" class="nav-link ${page===id?'active':''}" ${page===id?'aria-current="page"':''}>${icon(i)}<span>${label}</span></a>`).join('')}</nav><div class="sidebar-bottom"><div class="sidebar-quote">See what you know.<br>Choose what comes next.</div><button class="text-button" data-action="reset-demo">${icon('reset')} Reset Demo</button><div class="local-status">${icon('shield')} ${mode==='server'?'Connected account':'Offline demo'}<span>${mode==='server'?'Account state saved':'Runs locally in this browser'}</span></div></div></aside><main id="main" tabindex="-1"><div class="page-kicker"><span>LIFEOS <span>/</span> ${nav.find(([id])=>id===page)[2].toUpperCase()}</span><span>DEMO DATA</span></div>${storageWarning&&mode==='offline'?'<div class="notice" role="status">Browser storage is unavailable. Changes last only for this session.</div>':''}${mode==='offline'&&bootstrapError?'<div class="notice" role="status">The account service is unavailable. You are viewing the local demo.</div>':''}${page==='today'?renderTodaySkillPage(skillIntelligence,{demoPreview:true}):page==='knowledge'?renderSkillKnowledgePage(skillIntelligence):page==='roadmap'?renderCareerCampaignPage(skillIntelligence):renderLearningHubPage(skillIntelligence)}<footer class="page-footer">LifeOS · Multi-domain career development</footer></main>`;
-  bindForms();
+   bindForms();syncShellState();
+ }
+function isMobileViewport(){return globalThis.matchMedia?.('(max-width: 768px)').matches??false;}
+function syncShellState(){
+  const mobile=isMobileViewport(),trigger=document.querySelector('.mobile-menu'),sidebar=document.querySelector('.sidebar'),profile=document.querySelector('.profile-button'),main=document.querySelector('main');
+  let scrim=document.querySelector('.drawer-scrim');
+  if(!scrim){scrim=document.createElement('button');scrim.type='button';scrim.className='drawer-scrim';scrim.dataset.action='close-menu';scrim.setAttribute('aria-label','Close navigation');document.querySelector('#app')?.prepend(scrim);}
+  trigger?.setAttribute('aria-controls','main-navigation');trigger?.setAttribute('aria-expanded',String(mobile&&drawerOpen));
+  sidebar?.setAttribute('id','main-navigation');sidebar?.classList.toggle('open',mobile&&drawerOpen);sidebar?.setAttribute('aria-hidden',String(mobile&&!drawerOpen));sidebar?.toggleAttribute('inert',mobile&&!drawerOpen);main?.toggleAttribute('inert',mobile&&drawerOpen);
+  profile?.setAttribute('aria-haspopup','dialog');profile?.setAttribute('aria-controls','modal-root');profile?.setAttribute('aria-expanded',String(modal?.type==='profile-menu'));
+  document.querySelectorAll('.sidebar .nav-link').forEach(link=>link.dataset.action='close-menu');
+  const modeLabel=document.querySelector('.page-kicker > span:last-child');if(modeLabel)modeLabel.textContent=mode==='server'?'ACCOUNT SAVED':'DEMO DATA';
+  const profileMode=document.querySelector('.profile-mini small');if(profileMode)profileMode.textContent=mode==='server'?'Connected account':'Demo profile';
+  if(modal?.type==='profile-menu'){const summary=document.querySelector('.modal .profile-summary');if(summary){summary.querySelector('.eyebrow')?.replaceChildren(document.createTextNode(mode==='server'?'CONNECTED ACCOUNT':'DEMO PROFILE'));summary.querySelector('h3')?.replaceChildren(document.createTextNode(mode==='server'?'Career development account':'Career development learner'));summary.querySelector('p')?.replaceChildren(document.createTextNode(mode==='server'?'Your progress in this account is connected to LifeOS.':'Your progress in this preview is stored locally in the browser.'));}const notice=document.querySelector('.modal .profile-summary + .notice');if(notice)notice.textContent=mode==='server'?'Your account state is loaded from the LifeOS service.':'This is a frontend-only demo. It does not create an account or send your learning activity to a server.';}
+  scrim.hidden=!mobile||!drawerOpen;document.body.classList.toggle('drawer-open',mobile&&drawerOpen);
 }
-function closeModal(){const root=document.querySelector('#modal-root');root.innerHTML='';document.body.classList.remove('modal-open');modal=null;if(returnFocus?.isConnected)returnFocus.focus();}
+function setDrawer(open){
+  if(open&&!isMobileViewport())return;
+  if(open===drawerOpen){syncShellState();return;}
+  if(open){drawerReturnFocus=document.activeElement;drawerOpen=true;render();queueMicrotask(()=>document.querySelector('#main-navigation .nav-link, #main-navigation button')?.focus());return;}
+  const restore=drawerReturnFocus;drawerOpen=false;drawerReturnFocus=null;render();if(restore?.isConnected)restore.focus();
+}
+function closeModal(){const root=document.querySelector('#modal-root');root.innerHTML='';document.body.classList.remove('modal-open');modal=null;if(returnFocus?.isConnected)returnFocus.focus();syncShellState();}
 function openModal(type,id){returnFocus=document.activeElement;modal={type,id};renderModal();}
 function dialog(title,body,footer='',wide=false){return `<div class="modal-backdrop"><section class="modal ${wide?'wide':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1"><header class="modal-header"><div><div class="eyebrow">LIFEOS · DEMO</div><h2 id="dialog-title">${esc(title)}</h2></div><button class="icon-button" data-action="close" aria-label="Close dialog">${icon('close')}</button></header><div class="modal-body">${body}</div>${footer?`<footer class="modal-footer">${footer}</footer>`:''}</section></div>`;}
 async function switchToServer(action,code=''){
@@ -170,7 +190,7 @@ function renderModal(){
   }else if(type==='player-code'){
     html=dialog('Keep your Player Code safe',`<p>This is the only time your recovery code will be shown. Save it somewhere private so you can restore this grimoire on another browser.</p><div class="recovery-code" aria-label="Your Player Code">${esc(oneTimePlayerCode||'')}</div><p class="small-copy">Anyone with this code can access the account. The server stores only a secure digest.</p>`,`${btn('Copy code','copy-player-code')}${btn('I saved it','close',{primary:true,icon:'check'})}`);
   }
-  document.querySelector('#modal-root').innerHTML=html;document.body.classList.add('modal-open');bindModalForms();document.querySelector('.modal')?.focus();
+  document.querySelector('#modal-root').innerHTML=html;document.body.classList.add('modal-open');bindModalForms();document.querySelector('.modal')?.focus();syncShellState();
 }
 async function sendChat(text){
   if(busy||!text.trim())return;
@@ -222,7 +242,7 @@ async function createCustomRoadmapPreview(){
 }
 function startTrack(id){if(busy)return;const track=trackById(id),dynamic=state.domains?.find(domain=>domain.id===id||domain.key===id);if(mode==='server'){beginAiRoadmapFlow(`I want to learn ${track?.name||dynamic?.name||id}`,track?.goal||'');return;}if(!track){toast('Arcana can add a full roadmap for this new branch once custom journey generation is connected.');return;}closeModal();state.builder={stage:'goal'};state.draft=null;save();navigate('companion');sendChat(track.goal);}
 const actions={
- navigate: id=>navigate(id),menu:()=>document.querySelector('.sidebar').classList.toggle('open'),
+  navigate: id=>navigate(id),menu:()=>setDrawer(!drawerOpen),'close-menu':()=>setDrawer(false),
  'skill-detail':id=>openModal('skill-detail',id),
  'recommendation-detail':id=>openModal('recommendation-detail',id),
  'boss-detail':id=>openModal('boss-detail',id),
@@ -292,10 +312,17 @@ const actions={
 };
 document.addEventListener('click',e=>{const target=e.target.closest('[data-action]');if(target&&!target.disabled){try{const actionValue=target.dataset.value??target.dataset.id;if(target.dataset.page==='knowledge'){navigate('knowledge');actions[target.dataset.action]?.(actionValue);}else actions[target.dataset.action]?.(actionValue);}catch(err){toast(err.message);}}else if(e.target.classList.contains('modal-backdrop'))closeModal();});
 document.addEventListener('keydown',e=>{
-  if(!modal)return;if(e.key==='Escape'){closeModal();return;}
-  if(e.key==='Tab'){const dialog=document.querySelector('.modal'),controls=[...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select,textarea')];if(!controls.length)return;const first=controls[0],last=controls.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===dialog)){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===dialog)){e.preventDefault();first.focus();}}
+  if(modal){
+    if(e.key==='Escape'){e.preventDefault();closeModal();return;}
+    if(e.key==='Tab'){const dialog=document.querySelector('.modal'),controls=[...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select,textarea')];if(!controls.length)return;const first=controls[0],last=controls.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===dialog)){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===dialog)){e.preventDefault();first.focus();}}
+    return;
+  }
+  if(!drawerOpen)return;
+  if(e.key==='Escape'){e.preventDefault();setDrawer(false);return;}
+  if(e.key==='Tab'){const drawer=document.querySelector('#main-navigation'),controls=[...drawer.querySelectorAll('a[href],button:not([disabled])')];if(!controls.length)return;const first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
 });
 window.addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(legacyRoutes.has(id)){history.replaceState(null,'','#today');if(page!=='today'){page='today';closeModal();render();window.scrollTo(0,0);}return;}if(nav.some(([n])=>n===id)&&id!==page){page=id;closeModal();render();window.scrollTo(0,0);}});
+window.addEventListener('resize',()=>{if(!isMobileViewport()&&drawerOpen)setDrawer(false);else syncShellState();});
 function bindForms(){
   const careerTarget=document.querySelector('[name="careerTarget"]');if(careerTarget)careerTarget.onchange=e=>{skillIntelligence=selectCareerTarget(skillIntelligence,e.target.value);render();};
   const search=document.querySelector('#concept-search');if(search)search.oninput=e=>{const pos=e.target.selectionStart;view.conceptPage=0;view.search=e.target.value;render();const el=document.querySelector('#concept-search');el.focus();try{el.setSelectionRange(pos,pos);}catch{}};
