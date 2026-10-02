@@ -1,0 +1,13 @@
+{
+  "framework": null,
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "rewrites": [
+    { "source": "/api/:first/:rest+", "destination": "/api/router?__path=/api/:first/:rest+" }
+  ],
+  "crons": [
+    { "path": "/api/cron/daily-rollover", "schedule": "0 17 * * *" },
+    { "path": "/api/cron/morning-reminder", "schedule": "0 23 * * *" }
+  ]
+}

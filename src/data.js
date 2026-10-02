@@ -1,35 +1,7 @@
-import {CURRICULA} from './curriculum.js';
-import {BREADTH_TRACKS} from './breadth.js';
-export const TRACKS = [
-  {id:'python', name:'Python', subtitle:'The language of possibility', icon:'code', color:'#3f6b45', goal:'Build your Python foundations', rank:'Practitioner', description:'Turn ideas into scripts. Learn the language, work with data, and build a useful little tool.', resource:'https://docs.python.org/3/tutorial/', concepts:['Variables & Types','Control Flow','Functions','Collections','File Handling','Python Projects'], chapters:['The First Incantation','Logic & Control Flow','Functions & Collections','Build a Personal Tool'], project:'Build a command-line habit tracker', practice:'Transform a list of daily habits into a progress summary', explanation:'A Python function packages a small, reusable action. Try a function that receives a list of study sessions and returns their total minutes.'},
-  {id:'dsa', name:'Data Structures', subtitle:'Order within complexity', icon:'tree', color:'#385e79', goal:'Prepare for coding interviews', rank:'Explorer', description:'Discover how data is organized, learn to reason about trade-offs, and practice problem solving.', resource:'https://opendsa-server.cs.vt.edu/ODSA/Books/Everything/html/index.html', concepts:['Arrays & Lists','Stacks & Queues','Linked Lists','Trees & Graphs','Sorting & Searching','Complexity'], chapters:['Structures of Thought','Stacks, Queues & Links','Trees & Search Paths','Patterns & Trade-offs'], project:'Build a searchable book collection', practice:'Compare a stack and a queue with a browser-history example', explanation:'A stack removes the most recently added item first; a queue removes the oldest first. Think of undo history versus a line of print jobs.'},
-  {id:'java', name:'Java', subtitle:'Craft with structure', icon:'coffee', color:'#a4472e', goal:'Learn Java from scratch', rank:'Initiate', description:'From your first class to collections and streams, build a strong foundation in the Java ecosystem.', resource:'https://dev.java/learn/', concepts:['Java Essentials','Classes & Objects','Collections','Exceptions','Streams','Java Projects'], chapters:['Welcome to the JVM','Objects & Responsibilities','Collections & Exceptions','A Small Java Application'], project:'Build a library lending application', practice:'Model a book and a reader as Java classes', explanation:'A Java class describes the state and behavior of an object. A Book might hold a title and availability, while borrow() changes its availability.'},
-  {id:'oop', name:'Object-Oriented Design', subtitle:'Give your ideas a shape', icon:'layers', color:'#795286', goal:'Master OOP fundamentals', rank:'Apprentice', description:'Design objects with clear responsibilities and explore how they collaborate in a maintainable program.', resource:'https://dev.java/learn/classes-objects/', concepts:['Classes & Objects','Encapsulation','Inheritance','Polymorphism','Composition','Design Principles'], chapters:['Objects in the World','Boundaries & Encapsulation','Many Forms, One Contract','Compose a Better Design'], project:'Design a small role-playing inventory', practice:'Compare inheritance and composition for a game character', explanation:'Composition gives an object collaborators instead of a deep family tree. A character can have a weapon and a movement strategy without inheriting every possible combination.'},
-  {id:'rag', name:'RAG & AI', subtitle:'Connect knowledge to answers', icon:'spark', color:'#96711d', goal:'Build a document Q&A chatbot', rank:'Apprentice', description:'Connect language models to your own documents, from text preparation to thoughtful answer evaluation.', resource:'https://www.sbert.net/docs/quickstart.html', concepts:['Text Chunking','Embeddings','Vector Search','Retrieval','Grounded Answers','Evaluation'], chapters:['Foundations & Documents','Embeddings & Vector Space','Retrieval & Context','Bring Your Chatbot to Life'], project:'Build a PDF question-answering prototype', practice:'Experiment with embeddings on five text samples', explanation:'Embeddings represent text as vectors. Related passages often sit closer together. Similarity helps retrieve useful context, but it does not guarantee that a generated answer is correct.'}
-];
-TRACKS.push(
-  {id:'js',name:'JavaScript',subtitle:'Bring the web to life',icon:'code',color:'#a38119',goal:'Learn JavaScript from scratch',rank:'Initiate',description:'From language foundations to asynchronous browser applications.',resource:'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide',project:'Build an interactive task dashboard',practice:'Build a browser interaction with clear state and error handling.',explanation:'JavaScript closures retain access to variables from their enclosing scope. Promises represent asynchronous outcomes; await pauses an async function while the event loop can continue other work.'},
-  {id:'ai',name:'AI Fundamentals',subtitle:'Learn how models learn',icon:'spark',color:'#526a89',goal:'Learn AI and machine learning',rank:'Explorer',description:'Understand data, models, evaluation, neural networks, and responsible AI applications.',resource:'https://developers.google.com/machine-learning/crash-course',project:'Build a small prediction service',practice:'Compare a simple baseline with a trained model on held-out data.',explanation:'Machine learning fits patterns from data. Use separate training and evaluation examples, check for leakage, and compare with a simple baseline before adding model complexity.'}
-);
-TRACKS.push(...BREADTH_TRACKS);
-for(const track of TRACKS){track.modules=CURRICULA[track.id]||track.modules;track.chapters=track.modules.map(m=>m.title);track.concepts=[...new Set(track.modules.flatMap(m=>m.topics))];}
-TRACKS.find(t=>t.id==='rag').name='RAG Engineering';
-TRACKS.find(t=>t.id==='dsa').name='DSA';
-export const trackById = id => TRACKS.find(t=>t.id===id);
-export const STATUSES = {
-  applying:{label:'Applying',short:'Applying',color:'#3f6b45'},
-  understanding:{label:'Signs of understanding',short:'Understanding',color:'#385e79'},
-  self:{label:'Self-reported',short:'Self-reported',color:'#96711d'},
-  exploring:{label:'Exploring',short:'Exploring',color:'#795286'},
-  unobserved:{label:'Not yet observed',short:'Unobserved',color:'#8a8270'}
-};
-export const CONCEPTS = TRACKS.flatMap((t,ti)=>t.concepts.map((name,i)=>({
-  id:`${t.id}-${i}`,trackId:t.id,name,
-  status:ti===0 ? (['applying','understanding','applying','understanding','self','exploring'][i]||'unobserved') : (['understanding','self','exploring'][i]||'unobserved'),
-  chapter:t.modules.findIndex(m=>m.topics.includes(name)),
-  scope:`${name} · ${t.modules.find(m=>m.topics.includes(name)).summary}`,
-  evidence:i<3 ? [{date:'Sep 24, 2026',text: t.id==='rag' ? 'I would compare passages with similar meaning, then inspect the retrieved text before trusting the answer.' : `When working with ${name.toLowerCase()}, I start with a small example and compare what changes when the input changes.`, reason:'Illustrative conversation excerpt. This fixture is not an assessment of the current viewer.'},{date:'Sep 22, 2026',text:`I used ${name.toLowerCase()} in a small ${t.name} exercise and explained my choice using a different example.`,reason:'Second illustrative session; limited to the stated concept.'}] : []
-})));
+import {trackById} from '../shared/catalog/tracks.mjs';
+import {STATUSES,CONCEPTS} from '../shared/catalog/concepts.mjs';
+export {TRACKS,trackById} from '../shared/catalog/tracks.mjs';
+export {STATUSES,CONCEPTS} from '../shared/catalog/concepts.mjs';
 export const INITIAL_MESSAGES = [{role:'assistant',text:'Welcome back, Minh. Every great journey begins with a little curiosity. Tell me what you want to learn, and we will turn it into a roadmap together.',kind:'welcome'}];
 export function questContent(trackId,topic,type='Practice') {
   const t=trackById(trackId);

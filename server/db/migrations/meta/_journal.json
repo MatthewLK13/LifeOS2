@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790581978473,
+      "tag": "0000_phase1_initial",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790583053078,
+      "tag": "0001_ownership-constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790583267163,
+      "tag": "0002_relation-guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790586664857,
+      "tag": "0003_player-restore-rate-limit",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790586664858,
+      "tag": "0004_knowledge-signal-idempotency",
+      "breakpoints": true
+    }
+  ]
+}
