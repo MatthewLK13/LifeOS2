@@ -8,7 +8,7 @@ const questView=q=>({
  id:q.id,journeyId:q.journeyId,chapter:q.chapterOrderIndex??0,trackId:q.trackId??'',topic:q.topic??q.title,
  title:q.title,type:q.metadata?.originalType??questType[q.type]??'Learn',difficulty:q.difficulty??'C',xp:q.xpReward,
  minutes:q.minutes,status:questStatus[q.status]??'active',checks:(q.steps??[]).flatMap((step,index)=>step.completed?[index]:[]),
- notes:q.notes??'',description:q.description??'',prompt:q.prompt??'',steps:(q.steps??[]).map(step=>step.content),stepIds:(q.steps??[]).map(step=>step.id),resource:q.metadata?.resource??'#'
+ notes:q.notes??'',description:q.description??'',prompt:q.prompt??'',learningPackage:q.metadata?.learningPackage??null,steps:(q.steps??[]).map(step=>step.content),stepIds:(q.steps??[]).map(step=>step.id),resource:q.metadata?.resource??'#'
 });
 
 export function toViewState(apiState){

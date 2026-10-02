@@ -9,6 +9,7 @@ const previewOf=(draft:any)=>({title:draft.title,goal:draft.goal,templateKey:dra
 const failure=(status:number,code:string,message:string)=>({status,body:{error:{code,message}}});
 const publicJourney=(journey:any)=>({id:journey.id,title:journey.title,goal:journey.goal,status:journey.status,version:journey.version,minutesPerDay:journey.minutesPerDay,templateKey:journey.templateKey});
 const publicProposal=(proposal:any)=>({id:proposal.id,journeyId:proposal.journeyId,type:proposal.type,status:proposal.status,baseVersion:proposal.baseVersion,reason:proposal.reason,preview:proposal.previewJson,createdAt:proposal.createdAt});
+const publicLearningPackage=(pack:any)=>pack?({...pack,outcome:{...pack.outcome,problem:{task:pack.outcome?.problem?.task,starterMaterial:pack.outcome?.problem?.starterMaterial,requirements:pack.outcome?.problem?.requirements,acceptanceCriteria:pack.outcome?.problem?.acceptanceCriteria,conceptNames:pack.outcome?.problem?.conceptNames,questions:(pack.outcome?.problem?.questions||[]).map(({conceptName,question,context,choices}:any)=>({conceptName,question,context,choices}))}}}):undefined;
 const typeMap:Record<string,'LEARN'|'PRACTICE'|'ASSESSMENT'|'PROJECT'>={Learn:'LEARN',Review:'LEARN',Practice:'PRACTICE',Assessment:'ASSESSMENT',Project:'PROJECT'};
 
 export async function generateJourneyProposal(db:any,playerId:string,input:any,now:Date){
@@ -24,7 +25,7 @@ export async function generateJourneyProposal(db:any,playerId:string,input:any,n
 }
 
 export async function generateCustomJourneyProposal(db:any,playerId:string,draft:any,now:Date){
- const journeyId=randomUUID(),preview={title:draft.title,goal:draft.goal,templateKey:draft.trackId,trackName:draft.trackName,experienceLevel:draft.experienceLevel,minutesPerDay:draft.minutesPerDay,estimatedDays:draft.days,chapters:draft.chapters.map((chapter:any)=>({title:chapter.title,summary:chapter.summary,lane:chapter.lane,topics:chapter.topics,requires:chapter.requires,optional:chapter.optional,quests:chapter.quests.map((quest:any)=>({title:quest.title,type:quest.type,difficulty:quest.difficulty,xpReward:quest.xp,minutes:quest.minutes,prompt:quest.prompt,steps:quest.steps,description:quest.description,topic:quest.topic,resource:quest.resource}))}))};
+ const journeyId=randomUUID(),preview={title:draft.title,goal:draft.goal,templateKey:draft.trackId,trackName:draft.trackName,basedOnJourneyId:draft.basedOnJourneyId||null,experienceLevel:draft.experienceLevel,minutesPerDay:draft.minutesPerDay,estimatedDays:draft.days,chapters:draft.chapters.map((chapter:any)=>({title:chapter.title,summary:chapter.summary,lane:chapter.lane,topics:chapter.topics,requires:chapter.requires,optional:chapter.optional,quests:chapter.quests.map((quest:any)=>({title:quest.title,type:quest.type,difficulty:quest.difficulty,xpReward:quest.xp,minutes:quest.minutes,prompt:quest.prompt,steps:quest.steps,description:quest.description,topic:quest.topic,resource:quest.resource,learningPackage:publicLearningPackage(quest.learningPackage)}))}))};
  return db.transaction(async(tx:any)=>{
   await tx.insert(s.journeys).values({id:journeyId,playerId,title:draft.title,goal:draft.goal,status:'ARCHIVED',version:1,minutesPerDay:draft.minutesPerDay,experienceLevel:draft.experienceLevel,templateKey:'__pending__',createdAt:now,archivedAt:now});
   const [proposal]=await tx.insert(s.roadmapProposals).values({playerId,journeyId,baseVersion:1,type:'CREATE',status:'PENDING',reason:'AI-generated custom roadmap preview',patchJson:{kind:'CREATE',draft},previewJson:preview,createdAt:now}).returning();
@@ -103,7 +104,7 @@ async function createAcceptedJourney(tx:any,journey:any,draft:any,now:Date){
   await tx.insert(s.chapters).values({id:chapterId,journeyId:journey.id,title:sourceChapter.title,summary:sourceChapter.summary,orderIndex:chapterIndex,lane:sourceChapter.lane,metadata:{topics:sourceChapter.topics,requires:sourceChapter.requires,optional:sourceChapter.optional},createdAt:now});
   for(const sourceQuest of sourceChapter.quests){
    const questId=randomUUID(),type=typeMap[sourceQuest.type];if(!type)throw new Error('Stored roadmap contains an unsupported quest type.');
-   await tx.insert(s.quests).values({id:questId,journeyId:journey.id,playerId:journey.playerId,chapterId,type,assessmentSubtype:null,title:sourceQuest.title,description:sourceQuest.description,topic:sourceQuest.topic,prompt:sourceQuest.prompt,difficulty:sourceQuest.difficulty,xpReward:sourceQuest.xp,minutes:sourceQuest.minutes,status:'AVAILABLE',orderIndex:questOrderIndex++,source:'TEMPLATE',metadata:{originalType:sourceQuest.type,checks:sourceQuest.checks,resource:sourceQuest.resource},createdAt:now,updatedAt:now});
+   await tx.insert(s.quests).values({id:questId,journeyId:journey.id,playerId:journey.playerId,chapterId,type,assessmentSubtype:null,title:sourceQuest.title,description:sourceQuest.description,topic:sourceQuest.topic,prompt:sourceQuest.prompt,difficulty:sourceQuest.difficulty,xpReward:sourceQuest.xp,minutes:sourceQuest.minutes,status:'AVAILABLE',orderIndex:questOrderIndex++,source:'TEMPLATE',metadata:{originalType:sourceQuest.type,checks:sourceQuest.checks,resource:sourceQuest.resource,...(sourceQuest.learningPackage?{learningPackage:sourceQuest.learningPackage}:{})},createdAt:now,updatedAt:now});
    for(let stepIndex=0;stepIndex<sourceQuest.steps.length;stepIndex++)await tx.insert(s.questSteps).values({questId,orderIndex:stepIndex,content:sourceQuest.steps[stepIndex],completed:false});
   }
  }
@@ -123,7 +124,7 @@ export async function acceptJourneyProposal(db:any,playerId:string,proposalId:st
    await createAcceptedJourney(tx,journey,patch.draft,now);
    const draft=patch.draft;
    const [updated]=await tx.update(s.journeys).set({title:draft.title,goal:draft.goal,status:'ACTIVE',version:versionTo,minutesPerDay:draft.minutesPerDay,experienceLevel:draft.experienceLevel,templateKey:draft.trackId,archivedAt:null}).where(eq(s.journeys.id,journey.id)).returning();
-   diff={kind:'CREATE',templateKey:draft.trackId,chapterCount:draft.chapters.length};
+   diff={kind:'CREATE',templateKey:draft.trackId,chapterCount:draft.chapters.length,basedOnJourneyId:draft.basedOnJourneyId||null};
    await tx.insert(s.roadmapRevisions).values({journeyId:journey.id,versionFrom:journey.version,versionTo,reason:'Initial template roadmap accepted',diffJson:diff,createdAt:now});
    await tx.update(s.roadmapProposals).set({status:'ACCEPTED',decidedAt:now}).where(eq(s.roadmapProposals.id,proposal.id));
    return {status:200,body:{journey:publicJourney(updated),proposalStatus:'ACCEPTED'}};
