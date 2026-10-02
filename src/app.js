@@ -14,7 +14,7 @@ import {getQuestById,getDemoSubmission} from './demo-quests.js';
 
 let storageWarning=false,raw=null;
 try{raw=localStorage.getItem(STORAGE_KEY);}catch{storageWarning=true;}
-let state=hydrate(raw),mode='offline',identity=null,oneTimePlayerCode=null,bootstrapError=null,busy=false,modal=null,returnFocus=null,toastTimer,disposeGraph,chatAbort=null,retryMessage='',aiRoadmapFlow=null;
+let state=hydrate(raw),mode='offline',identity=null,oneTimePlayerCode=null,bootstrapError=null,busy=false,modal=null,dialogError='',returnFocus=null,toastTimer,disposeGraph,chatAbort=null,retryMessage='',aiRoadmapFlow=null,drawerOpen=false,drawerReturnFocus=null;
 let skillIntelligence=createSkillIntelligenceDemoState();
 let planner=createPlannerState();
 const nav=[['today','book','Today'],['knowledge','tree','My Knowledge'],['roadmap','compass','Career Campaign'],['learning','book','Learning Hub']];
@@ -28,22 +28,22 @@ function commit(next){state=next;save();}
 function toast(message){const t=document.querySelector('#toast');t.innerHTML=`${icon('check')}<span>${esc(message)}</span>`;t.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('visible'),4200);}
 async function refreshServerState(){state=toViewState(await getState());render();}
 async function serverMutation(request,{message,keepModal=false}={}){
- if(busy)return false;busy=true;
+  if(busy)return false;busy=true;dialogError='';if(modal)renderModal();
  try{await request();await refreshServerState();if(keepModal)renderModal();if(message)toast(message);return true;}
- catch(error){if(keepModal)renderModal();toast(error.message||'The change could not be saved. Your account state is unchanged.');return false;}
- finally{busy=false;}
+  catch(error){const message=error.message||'The change could not be saved. Your account state is unchanged.';dialogError=message;if(keepModal||modal)renderModal();toast(message);return false;}
+  finally{busy=false;if(modal)renderModal();}
 }
 async function createRoadmapOnServer(plan){
- if(busy)return;busy=true;
+  if(busy)return;busy=true;dialogError='';if(modal)renderModal();
  try{if(plan.aiProposalId)await acceptProposal(plan.aiProposalId);else{const created=await generateJourney({templateKey:plan.trackId,experienceLevel:plan.experience,minutesPerDay:plan.minutes,title:plan.title,goal:plan.goal});await acceptProposal(created.proposal.id);}await refreshServerState();state.draft=null;view.examplePlan=null;view.chapter=0;closeModal();navigate('roadmap');toast('A new journey begins. Your roadmap is now active.');}
- catch(error){toast(error.message||'The roadmap could not be saved.');}
- finally{busy=false;}
+  catch(error){showDialogError(error.message||'The roadmap could not be saved.');}
+  finally{busy=false;if(modal)renderModal();}
 }
 async function previewPacingOnServer(journey,minutes){
- if(busy)return;busy=true;
+  if(busy)return;busy=true;dialogError='';if(modal)renderModal();
  try{const {proposal}=await createJourneyProposal(journey.id,{type:'PACING',minutesPerDay:minutes}),preview=proposal.preview;state.proposal={serverProposalId:proposal.id,previous:preview.previousMinutesPerDay,minutes:preview.minutesPerDay,days:Math.ceil(journey.days*journey.minutes/preview.minutesPerDay)};modal={type:'proposal'};renderModal();}
- catch(error){toast(error.message||'The schedule could not be previewed.');}
- finally{busy=false;}
+  catch(error){showDialogError(error.message||'The schedule could not be previewed.');}
+  finally{busy=false;if(modal)renderModal();}
 }
 function vapidBytes(value){const base64=value.replace(/-/g,'+').replace(/_/g,'/'),padded=base64+'='.repeat((4-base64.length%4)%4),raw=atob(padded);return Uint8Array.from(raw,char=>char.charCodeAt(0));}
 async function enablePush(){
@@ -53,20 +53,42 @@ async function enablePush(){
  try{const registration=await navigator.serviceWorker.register('/service-worker.js'),{publicKey}=await getVapidPublicKey(),subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:vapidBytes(publicKey)});await savePushSubscription(subscription.toJSON());await refreshServerState();toast('Daily reminders are enabled.');}catch(error){toast(error.message||'Push reminders could not be enabled.');}
 }
 async function disablePush(){try{const registration=await navigator.serviceWorker.getRegistration('/'),subscription=await registration?.pushManager.getSubscription();if(subscription){await deletePushSubscription(subscription.endpoint);await subscription.unsubscribe();}await refreshServerState();toast('Daily reminders are disabled.');}catch(error){toast(error.message||'The reminder could not be disabled.');}}
-function navigate(id){if(!nav.some(([n])=>n===id))id='today';if(chatAbort)chatAbort.abort();closeModal();page=id;location.hash=id;view.view='graph';render();window.scrollTo({top:0});}
+function navigate(id){if(!nav.some(([n])=>n===id))id='today';if(chatAbort)chatAbort.abort();if(drawerOpen){drawerOpen=false;drawerReturnFocus=null;}closeModal();page=id;location.hash=id;view.view='graph';render();window.scrollTo({top:0});}
 function render(){
   disposeGraph?.();disposeGraph=null;
   const j=activeJourney(state);
   document.title=`${nav.find(([id])=>id===page)[2]} · LifeOS`;
   const displayName=state.profile?.displayName||'Minh';
   app.innerHTML=`<header class="topbar"><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle navigation">${icon('menu')}</button><a class="brand" href="#today"><span class="brand-mark">L</span><span><strong>LIFEOS</strong><small>Career development demo</small></span></a><div class="topbar-center">Understand your skills. Move toward your goal.</div><div class="topbar-right"><span class="demo-indicator"><i></i> ${mode==='server'?'ACCOUNT SAVED':'DEMO DATA'}</span><button class="profile-mini profile-button" data-action="profile-menu" aria-haspopup="menu" aria-expanded="false"><span><strong>${esc(displayName)}</strong><small>Career Starter</small></span><span class="avatar-letter">${esc(displayName[0]||'M')}</span></button></div></header><aside class="sidebar" aria-label="Main navigation"><div class="shell-intro"><div class="eyebrow">LIFEOS</div><h3>Career clarity,<br>one step at a time.</h3><span>Frontend V2 demo</span></div><nav>${nav.map(([id,i,label])=>`<a href="#${id}" class="nav-link ${page===id?'active':''}" ${page===id?'aria-current="page"':''}>${icon(i)}<span>${label}</span></a>`).join('')}</nav><div class="sidebar-bottom"><div class="sidebar-quote">See what you know.<br>Choose what comes next.</div><button class="text-button" data-action="reset-demo">${icon('reset')} Reset Demo</button><div class="local-status">${icon('shield')} ${mode==='server'?'Connected account':'Offline demo'}<span>${mode==='server'?'Account state saved':'Runs locally in this browser'}</span></div></div></aside><main id="main" tabindex="-1"><div class="page-kicker"><span>LIFEOS <span>/</span> ${nav.find(([id])=>id===page)[2].toUpperCase()}</span><span>DEMO DATA</span></div>${storageWarning&&mode==='offline'?'<div class="notice" role="status">Browser storage is unavailable. Changes last only for this session.</div>':''}${mode==='offline'&&bootstrapError?'<div class="notice" role="status">The account service is unavailable. You are viewing the local demo.</div>':''}${page==='today'?renderTodaySkillPage(skillIntelligence,{demoPreview:true}):page==='knowledge'?renderSkillKnowledgePage(skillIntelligence):page==='roadmap'?renderCareerCampaignPage(skillIntelligence):renderLearningHubPage(skillIntelligence)}<footer class="page-footer">LifeOS · Multi-domain career development</footer></main>`;
-  bindForms();
+   bindForms();syncShellState();
+ }
+function isMobileViewport(){return globalThis.matchMedia?.('(max-width: 768px)').matches??false;}
+function syncShellState(){
+  const mobile=isMobileViewport(),trigger=document.querySelector('.mobile-menu'),sidebar=document.querySelector('.sidebar'),profile=document.querySelector('.profile-button'),main=document.querySelector('main'),appRoot=document.querySelector('#app');
+  let scrim=document.querySelector('.drawer-scrim');
+  if(!scrim){scrim=document.createElement('button');scrim.type='button';scrim.className='drawer-scrim';scrim.dataset.action='close-menu';scrim.setAttribute('aria-label','Close navigation');document.querySelector('#app')?.prepend(scrim);}
+  trigger?.setAttribute('aria-controls','main-navigation');trigger?.setAttribute('aria-expanded',String(mobile&&drawerOpen));
+  sidebar?.setAttribute('id','main-navigation');sidebar?.classList.toggle('open',mobile&&drawerOpen);sidebar?.setAttribute('aria-hidden',String(mobile&&!drawerOpen));sidebar?.toggleAttribute('inert',mobile&&!drawerOpen);main?.toggleAttribute('inert',mobile&&drawerOpen);appRoot?.toggleAttribute('inert',Boolean(modal));
+  profile?.setAttribute('aria-haspopup','dialog');profile?.setAttribute('aria-controls','modal-root');profile?.setAttribute('aria-expanded',String(modal?.type==='profile-menu'));
+  document.querySelectorAll('.sidebar .nav-link').forEach(link=>link.dataset.action='close-menu');
+  const modeLabel=document.querySelector('.page-kicker > span:last-child');if(modeLabel)modeLabel.textContent=mode==='server'?'ACCOUNT SAVED':'DEMO DATA';
+  const profileMode=document.querySelector('.profile-mini small');if(profileMode)profileMode.textContent=mode==='server'?'Connected account':'Demo profile';
+  if(modal?.type==='profile-menu'){const summary=document.querySelector('.modal .profile-summary');if(summary){summary.querySelector('.eyebrow')?.replaceChildren(document.createTextNode(mode==='server'?'CONNECTED ACCOUNT':'DEMO PROFILE'));summary.querySelector('h3')?.replaceChildren(document.createTextNode(mode==='server'?'Career development account':'Career development learner'));summary.querySelector('p')?.replaceChildren(document.createTextNode(mode==='server'?'Your progress in this account is connected to LifeOS.':'Your progress in this preview is stored locally in the browser.'));}const notice=document.querySelector('.modal .profile-summary + .notice');if(notice)notice.textContent=mode==='server'?'Your account state is loaded from the LifeOS service.':'This is a frontend-only demo. It does not create an account or send your learning activity to a server.';}
+  scrim.hidden=!mobile||!drawerOpen;document.body.classList.toggle('drawer-open',mobile&&drawerOpen);
 }
-function closeModal(){const root=document.querySelector('#modal-root');root.innerHTML='';document.body.classList.remove('modal-open');modal=null;if(returnFocus?.isConnected)returnFocus.focus();}
-function openModal(type,id){returnFocus=document.activeElement;modal={type,id};renderModal();}
-function dialog(title,body,footer='',wide=false){return `<div class="modal-backdrop"><section class="modal ${wide?'wide':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1"><header class="modal-header"><div><div class="eyebrow">LIFEOS · DEMO</div><h2 id="dialog-title">${esc(title)}</h2></div><button class="icon-button" data-action="close" aria-label="Close dialog">${icon('close')}</button></header><div class="modal-body">${body}</div>${footer?`<footer class="modal-footer">${footer}</footer>`:''}</section></div>`;}
+function setDrawer(open){
+  if(open&&!isMobileViewport())return;
+  if(open===drawerOpen){syncShellState();return;}
+  if(open){drawerReturnFocus=document.activeElement;drawerOpen=true;render();queueMicrotask(()=>document.querySelector('#main-navigation .nav-link, #main-navigation button')?.focus());return;}
+  const restore=drawerReturnFocus;drawerOpen=false;drawerReturnFocus=null;render();if(restore?.isConnected)restore.focus();
+}
+function closeModal(){const root=document.querySelector('#modal-root');root.innerHTML='';document.body.classList.remove('modal-open');modal=null;dialogError='';if(returnFocus?.isConnected)returnFocus.focus();syncShellState();}
+function openModal(type,id){returnFocus=document.activeElement;modal={type,id};dialogError='';renderModal();}
+function focusModal(){const dialog=document.querySelector('.modal');if(!dialog)return;const first=dialog.querySelector('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button[data-action]:not([data-action="close"]):not([disabled]),a[href],button:not([disabled])');(first||dialog).focus();}
+function showDialogError(message){dialogError=String(message||'The action could not be completed.');if(modal)renderModal();toast(dialogError);}
+function dialog(title,body,footer='',wide=false){return `<div class="modal-backdrop"><section class="modal ${wide?'wide':''} ${busy?'is-pending':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-description" aria-busy="${busy}" tabindex="-1"><header class="modal-header"><div><div class="eyebrow">LIFEOS · DEMO</div><h2 id="dialog-title">${esc(title)}</h2>${busy?'<p class="modal-pending" role="status" aria-live="polite">Working on this request…</p>':''}</div><button class="icon-button" data-action="close" aria-label="Close dialog">${icon('close')}</button></header>${dialogError?`<div class="form-error-summary modal-error" role="alert" tabindex="-1"><strong>We could not complete that action.</strong><p>${esc(dialogError)}</p></div>`:''}<div class="modal-body" id="dialog-description">${body}</div>${footer?`<footer class="modal-footer">${footer}</footer>`:''}</section></div>`;}
 async function switchToServer(action,code=''){
- if(busy)return;busy=true;
+  if(busy)return;busy=true;dialogError='';if(modal)renderModal();
  try{
   if(action==='restore')await restorePlayer(code);
   else if(action==='demo')await enterDemo();
@@ -74,26 +96,26 @@ async function switchToServer(action,code=''){
   if(result.mode!=='server')throw result.error||new Error('The account service is unavailable.');
   mode='server';identity=result.identity;state=result.state;bootstrapError=null;closeModal();render();toast(`Welcome, ${identity.player.displayName}. Your progress is connected.`);
   if(result.playerCode){oneTimePlayerCode=result.playerCode;openModal('player-code');}
- }catch(error){toast(error.message||'The account could not be opened.');}
- finally{busy=false;}
+  }catch(error){showDialogError(error.message||'The account could not be opened.');}
+  finally{busy=false;if(modal)renderModal();}
 }
 async function startNewAccount(){
- if(busy)return;busy=true;
+  if(busy)return;busy=true;dialogError='';if(modal)renderModal();
  try{
   await logoutPlayer();
   const result=await loadPlayerState({offlineState:state});
   if(result.mode!=='server')throw result.error||new Error('The account service is unavailable.');
   mode='server';identity=result.identity;state=result.state;bootstrapError=null;closeModal();render();toast(`Welcome, ${identity.player.displayName}. Your new account is connected.`);
   if(result.playerCode){oneTimePlayerCode=result.playerCode;openModal('player-code');}
- }catch(error){toast(error.message||'The new account could not be created.');}
- finally{busy=false;}
+  }catch(error){showDialogError(error.message||'The new account could not be created.');}
+  finally{busy=false;if(modal)renderModal();}
 }
 function renderModal(){
   if(!modal)return;const {type,id}=modal;let html='';
   if(type==='quest'){
     const q=state.quests.find(q=>q.id===id)||view.examplePlan?.chapters.flatMap(c=>c.quests).find(q=>q.id===id);if(!q){closeModal();return;}
     const preview=view.examplePlan?.id===q.journeyId;
-    html=dialog(q.title,`<div class="meta">${badge(q.type,'red')}${badge(`Rank ${q.difficulty}`,'gold')}<span>${icon('clock')}${q.minutes} min</span><b class="xp-text">+${q.xp} XP</b>${badge(q.status==='completed'?'Completed':q.status==='in-progress'?'In progress':'Ready to explore',q.status==='completed'?'green':'')}</div><p class="quest-intro">${esc(q.description)}</p><div class="quest-objective"><div class="eyebrow">YOUR SMALL ADVENTURE</div><p>${esc(q.prompt)}</p></div><h3>Field notes & steps</h3><div class="checklist">${q.steps.map((step,i)=>`<label><input type="checkbox" data-check="${i}" ${q.checks.includes(i)?'checked':''} ${q.status==='completed'||preview?'disabled':''}><span>${esc(step)}</span></label>`).join('')}</div><label class="input-label" for="quest-notes">Your observation <span>${preview?'Preview only':mode==='server'?'Optional · saved to your account':'Optional · saved locally'}</span></label><textarea id="quest-notes" ${preview?'disabled':''} rows="3" placeholder="What did you notice? What would you like to explore next?" maxlength="2000">${esc(q.notes)}</textarea><a class="resource-link" href="${esc(q.resource)}" target="_blank" rel="noopener noreferrer">${icon('book')} Open learning resource ${icon('external')}</a><p class="small-copy">You decide when the activity is complete. Your checklist is a guide, not a test. Activity XP does not change your knowledge rank.</p>`,`${btn('Back to my grimoire','close')}${view.examplePlan?.id===q.journeyId?badge('Preview · Start the roadmap to record activities','gold'):q.status==='completed'?badge('Recorded in your chronicle','green'):q.status==='active'?btn('Start quest','begin-quest',{id,primary:true,icon:'arrow'}):`${q.type==='Assessment'&&mode==='server'?btn('Try an optional assessment','start-assessment',{id,icon:'spark'}):''}${btn('I have completed this activity','complete-quest',{id,primary:true,icon:'check'})}`}`,true);
+     html=dialog(q.title,`<div class="meta">${badge(q.type,'red')}${badge(`Rank ${q.difficulty}`,'gold')}<span>${icon('clock')}${q.minutes} min</span><b class="xp-text">+${q.xp} XP</b>${badge(q.status==='completed'?'Completed':q.status==='in-progress'?'In progress':'Ready to explore',q.status==='completed'?'green':'')}</div><p class="quest-intro">${esc(q.description)}</p><div class="quest-objective"><div class="eyebrow">YOUR SMALL ADVENTURE</div><p>${esc(q.prompt)}</p></div><h3>Field notes & steps</h3><div class="checklist">${q.steps.map((step,i)=>`<label><input type="checkbox" data-check="${i}" ${q.checks.includes(i)?'checked':''} ${q.status==='completed'||preview?'disabled':''}><span>${esc(step)}</span></label>`).join('')}</div><label class="input-label" for="quest-notes">Your observation <span>${preview?'Preview only':mode==='server'?'Optional · saved to your account':'Optional · saved locally'}</span></label><textarea id="quest-notes" ${preview?'disabled':''} rows="3" placeholder="What did you notice? What would you like to explore next?" maxlength="2000">${esc(q.notes)}</textarea><a class="resource-link" href="${esc(q.resource)}" target="_blank" rel="noopener noreferrer">${icon('book')} Open learning resource ${icon('external')}</a><p class="small-copy">You decide when the activity is complete. Your checklist is a guide, not a test. Activity XP does not change your knowledge rank.</p>`,`${btn('Back to activity','close')}${view.examplePlan?.id===q.journeyId?badge('Preview · Start the roadmap to record activities','gold'):q.status==='completed'?badge('Recorded in your activity history','green'):q.status==='active'?btn('Start quest','begin-quest',{id,primary:true,icon:'arrow'}):`${q.type==='Assessment'&&mode==='server'?btn('Try an optional assessment','start-assessment',{id,icon:'spark'}):''}${btn('I have completed this activity','complete-quest',{id,primary:true,icon:'check'})}`}`,true);
   }else if(type==='assessment'){
     const q=state.quests.find(item=>item.id===id),current=modal.assessment,result=modal.result;
     const resultView=result?`<div class="notice">${badge(result.verdict,result.verdict==='STRONG'?'green':'gold')}<p>${esc(result.feedback)}</p>${result.correctCount!==undefined?`<p>${result.correctCount} of ${result.totalCount} answers correct.</p>`:''}${result.misconceptions?.length?`<h3>Points to revisit</h3><ul>${result.misconceptions.map(item=>`<li>${esc(item)}</li>`).join('')}</ul>`:''}</div>`:'';
@@ -170,7 +192,7 @@ function renderModal(){
   }else if(type==='player-code'){
     html=dialog('Keep your Player Code safe',`<p>This is the only time your recovery code will be shown. Save it somewhere private so you can restore this grimoire on another browser.</p><div class="recovery-code" aria-label="Your Player Code">${esc(oneTimePlayerCode||'')}</div><p class="small-copy">Anyone with this code can access the account. The server stores only a secure digest.</p>`,`${btn('Copy code','copy-player-code')}${btn('I saved it','close',{primary:true,icon:'check'})}`);
   }
-  document.querySelector('#modal-root').innerHTML=html;document.body.classList.add('modal-open');bindModalForms();document.querySelector('.modal')?.focus();
+  document.querySelector('#modal-root').innerHTML=html;document.body.classList.add('modal-open');bindModalForms();syncShellState();focusModal();
 }
 async function sendChat(text){
   if(busy||!text.trim())return;
@@ -222,7 +244,7 @@ async function createCustomRoadmapPreview(){
 }
 function startTrack(id){if(busy)return;const track=trackById(id),dynamic=state.domains?.find(domain=>domain.id===id||domain.key===id);if(mode==='server'){beginAiRoadmapFlow(`I want to learn ${track?.name||dynamic?.name||id}`,track?.goal||'');return;}if(!track){toast('Arcana can add a full roadmap for this new branch once custom journey generation is connected.');return;}closeModal();state.builder={stage:'goal'};state.draft=null;save();navigate('companion');sendChat(track.goal);}
 const actions={
- navigate: id=>navigate(id),menu:()=>document.querySelector('.sidebar').classList.toggle('open'),
+  navigate: id=>navigate(id),menu:()=>setDrawer(!drawerOpen),'close-menu':()=>setDrawer(false),
  'skill-detail':id=>openModal('skill-detail',id),
  'recommendation-detail':id=>openModal('recommendation-detail',id),
  'boss-detail':id=>openModal('boss-detail',id),
@@ -246,7 +268,7 @@ const actions={
  'recall-quest':id=>{skillIntelligence=completeRecallQuest(skillIntelligence,id);renderModal();toast('Recall complete. The demo freshness signal was refreshed; mastery and progress are unchanged.');},
  quest:id=>openModal('quest',id),close:closeModal,
  'start-assessment':id=>{modal={type:'assessment',id};renderModal();},
- 'create-assessment':subtype=>{if(busy)return;const q=state.quests.find(item=>item.id===modal?.id);if(!q)return;busy=true;void createAssessment({subtype,topic:q.topic||q.title,prompt:q.prompt||q.description||q.title,questId:q.id}).then(({assessment})=>{modal={...modal,assessment};renderModal();}).catch(error=>toast(error.message||'This assessment could not be prepared. You can complete the quest manually.')).finally(()=>{busy=false;});},
+  'create-assessment':subtype=>{if(busy)return;const q=state.quests.find(item=>item.id===modal?.id);if(!q)return;busy=true;dialogError='';renderModal();void createAssessment({subtype,topic:q.topic||q.title,prompt:q.prompt||q.description||q.title,questId:q.id}).then(({assessment})=>{modal={...modal,assessment};renderModal();}).catch(error=>showDialogError(error.message||'This assessment could not be prepared. You can complete the quest manually.')).finally(()=>{busy=false;if(modal)renderModal();});},
  'new-journey':()=>openModal('new-journey'), 'start-track':startTrack,
  'knowledge-track':id=>{view.track=id;view.concept=state.concepts.find(c=>c.trackId===id).id;view.search='';view.filter='all';navigate('knowledge');},
  'begin-quest':id=>mode==='server'?serverMutation(()=>startQuest(id),{message:'Your next chapter has begun.',keepModal:true}):(()=>{const q=state.quests.find(q=>q.id===id);q.status='in-progress';save();render();renderModal();toast('Your next chapter has begun.');})(),
@@ -292,10 +314,17 @@ const actions={
 };
 document.addEventListener('click',e=>{const target=e.target.closest('[data-action]');if(target&&!target.disabled){try{const actionValue=target.dataset.value??target.dataset.id;if(target.dataset.page==='knowledge'){navigate('knowledge');actions[target.dataset.action]?.(actionValue);}else actions[target.dataset.action]?.(actionValue);}catch(err){toast(err.message);}}else if(e.target.classList.contains('modal-backdrop'))closeModal();});
 document.addEventListener('keydown',e=>{
-  if(!modal)return;if(e.key==='Escape'){closeModal();return;}
-  if(e.key==='Tab'){const dialog=document.querySelector('.modal'),controls=[...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select,textarea')];if(!controls.length)return;const first=controls[0],last=controls.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===dialog)){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===dialog)){e.preventDefault();first.focus();}}
+  if(modal){
+    if(e.key==='Escape'){e.preventDefault();closeModal();return;}
+    if(e.key==='Tab'){const dialog=document.querySelector('.modal'),controls=[...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select,textarea')];if(!controls.length)return;const first=controls[0],last=controls.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===dialog)){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===dialog)){e.preventDefault();first.focus();}}
+    return;
+  }
+  if(!drawerOpen)return;
+  if(e.key==='Escape'){e.preventDefault();setDrawer(false);return;}
+  if(e.key==='Tab'){const drawer=document.querySelector('#main-navigation'),controls=[...drawer.querySelectorAll('a[href],button:not([disabled])')];if(!controls.length)return;const first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
 });
 window.addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(legacyRoutes.has(id)){history.replaceState(null,'','#today');if(page!=='today'){page='today';closeModal();render();window.scrollTo(0,0);}return;}if(nav.some(([n])=>n===id)&&id!==page){page=id;closeModal();render();window.scrollTo(0,0);}});
+window.addEventListener('resize',()=>{if(!isMobileViewport()&&drawerOpen)setDrawer(false);else syncShellState();});
 function bindForms(){
   const careerTarget=document.querySelector('[name="careerTarget"]');if(careerTarget)careerTarget.onchange=e=>{skillIntelligence=selectCareerTarget(skillIntelligence,e.target.value);render();};
   const search=document.querySelector('#concept-search');if(search)search.oninput=e=>{const pos=e.target.selectionStart;view.conceptPage=0;view.search=e.target.value;render();const el=document.querySelector('#concept-search');el.focus();try{el.setSelectionRange(pos,pos);}catch{}};
@@ -306,14 +335,20 @@ function bindForms(){
   const input=document.querySelector('#chat-input');if(input)input.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();chat.requestSubmit();}};
   document.querySelectorAll('[data-pref]').forEach(el=>el.onchange=()=>{state.preferences[el.dataset.pref]=el.checked;save();toast('Preference saved.');});
   const memory=document.querySelector('#memory-form');if(memory)memory.onsubmit=e=>{e.preventDefault();const text=new FormData(memory).get('memory').trim();if(!text)return;state.memories.push({id:crypto.randomUUID(),text:text.slice(0,240),source:'Added by you · this session'});save();render();toast('A note added to your memory core.');};
-}
-function bindModalForms(){
-  const assessment=document.querySelector('#assessment-answer-form');if(assessment)assessment.onsubmit=async e=>{e.preventDefault();if(busy)return;const current=modal?.assessment;if(!current)return;let input;if(current.subtype==='QUIZ'){const formData=new FormData(assessment),count=Number(formData.get('question-count'));input={answers:Array.from({length:count},(_,index)=>Number(formData.get(`answer-${index}`)))};if(input.answers.some((answer,index)=>!formData.has(`answer-${index}`))){toast('Answer each question before submitting.');return;}}else input={answer:String(new FormData(assessment).get('answer')||'')};busy=true;try{const {result}=await submitAssessment(current.id,input);modal={...modal,result};await refreshServerState();renderModal();}catch(error){toast(error.message||'The assessment could not be submitted.');}finally{busy=false;}};
+ }
+ function clearFormErrors(form){form.querySelectorAll('.form-field-error').forEach(error=>error.remove());form.querySelector('.form-error-summary')?.remove();form.querySelectorAll('[aria-invalid="true"]').forEach(field=>{field.removeAttribute('aria-invalid');const ids=(field.getAttribute('aria-describedby')||'').split(/\s+/).filter(id=>id&&id!==field.dataset.errorId);ids.length?field.setAttribute('aria-describedby',ids.join(' ')):field.removeAttribute('aria-describedby');delete field.dataset.errorId;});}
+ function showFormErrors(form,errors){clearFormErrors(form);const summary=document.createElement('div');summary.className='form-error-summary';summary.id=`${form.id||'form'}-errors`;summary.tabIndex=-1;summary.setAttribute('role','alert');summary.innerHTML='<strong id="form-error-title">There is a problem</strong><ul></ul>';const list=summary.querySelector('ul');form.prepend(summary);errors.forEach(({field,message})=>{const target=field.closest('fieldset')||field;if(!target.id)target.id=`${form.id||'form'}-${field.name||'field'}-target`;const errorId=`${target.id}-error`,error=document.createElement('p');error.className='form-field-error';error.id=errorId;error.setAttribute('role','alert');error.textContent=message;target.insertAdjacentElement('afterend',error);field.setAttribute('aria-invalid','true');field.dataset.errorId=errorId;const ids=(field.getAttribute('aria-describedby')||'').split(/\s+/).filter(Boolean);field.setAttribute('aria-describedby',[...new Set([...ids,errorId])].join(' '));const item=document.createElement('li'),link=document.createElement('a');link.href=`#${target.id}`;link.textContent=message;item.append(link);list.append(item);});summary.focus();}
+ function validateRequiredForm(form,fields){const errors=fields.filter(({field,valid})=>!valid(field)).map(({field,message})=>({field,message}));if(errors.length)showFormErrors(form,errors);else clearFormErrors(form);return !errors.length;}
+ function validateAssessmentForm(form){const current=modal?.assessment;if(!current)return true;if(current.subtype==='QUIZ'){const errors=[...form.querySelectorAll('.assessment-question')].filter(fieldset=>!fieldset.querySelector('input:checked')).map(fieldset=>({field:fieldset.querySelector('input'),message:'Choose one answer for this question.'}));if(errors.length){showFormErrors(form,errors);return false;}clearFormErrors(form);return true;}const answer=form.querySelector('#assessment-answer');return validateRequiredForm(form,[{field:answer,valid:field=>Boolean(field?.value.trim()),message:'Enter an answer before requesting feedback.'}]);}
+ function bindModalForms(){
+  const assessment=document.querySelector('#assessment-answer-form');if(assessment)assessment.onsubmit=async e=>{e.preventDefault();if(busy)return;const current=modal?.assessment;if(!current)return;let input;if(current.subtype==='QUIZ'){const formData=new FormData(assessment),count=Number(formData.get('question-count'));input={answers:Array.from({length:count},(_,index)=>Number(formData.get(`answer-${index}`)))};if(input.answers.some((answer,index)=>!formData.has(`answer-${index}`))){toast('Answer each question before submitting.');return;}}else input={answer:String(new FormData(assessment).get('answer')||'')};busy=true;try{const {result}=await submitAssessment(current.id,input);modal={...modal,result};await refreshServerState();renderModal();}catch(error){showDialogError(error.message||'The assessment could not be submitted.');}finally{busy=false;if(modal)renderModal();}};
+  if(assessment){assessment.noValidate=true;assessment.addEventListener('submit',e=>{if(!validateAssessmentForm(assessment)){e.preventDefault();e.stopImmediatePropagation();}},true);}
   document.querySelectorAll('[data-check]').forEach(el=>el.onchange=()=>{const q=state.quests.find(q=>q.id===modal.id)||view.examplePlan?.chapters.flatMap(c=>c.quests).find(q=>q.id===modal.id),i=Number(el.dataset.check);if(mode==='server'){const stepId=q?.stepIds?.[i];if(!stepId){toast('This step cannot be updated yet.');renderModal();return;}void serverMutation(()=>updateQuestStep(q.id,stepId,el.checked),{keepModal:true});return;}q.checks=el.checked?[...new Set([...q.checks,i])]:q.checks.filter(x=>x!==i);save();});
   const notes=document.querySelector('#quest-notes');if(notes)notes.oninput=()=>{if(mode!=='server'){(state.quests.find(q=>q.id===modal.id)||view.examplePlan?.chapters.flatMap(c=>c.quests).find(q=>q.id===modal.id)).notes=notes.value;save();}};
   if(notes&&mode==='server')notes.onblur=()=>{const q=state.quests.find(q=>q.id===modal.id);if(q&&notes.value!==q.notes)void serverMutation(()=>updateQuestNote(q.id,notes.value),{keepModal:true});};
   const schedule=document.querySelector('#schedule-form');if(schedule)schedule.onsubmit=e=>{e.preventDefault();const minutes=Number(new FormData(schedule).get('minutes'));if(mode==='server'){const journey=activeJourney(state);if(journey)void previewPacingOnServer(journey,minutes);return;}commit(proposeSchedule(state,minutes));modal={type:'proposal'};renderModal();};
-  const restore=document.querySelector('#restore-player-form');if(restore)restore.onsubmit=e=>{e.preventDefault();switchToServer('restore',String(new FormData(restore).get('code')||'').trim());};
+  const restore=document.querySelector('#restore-player-form');if(restore){restore.noValidate=true;restore.onsubmit=e=>{e.preventDefault();const code=restore.elements.namedItem('code'),value=String(code?.value||'').trim(),rules=value?[{field:code,valid:field=>String(field?.value||'').trim().length>=10,message:'Player Code must contain at least 10 characters.'}]:[{field:code,valid:field=>Boolean(field?.value.trim()),message:'Enter your Player Code.'}];if(!validateRequiredForm(restore,rules))return;switchToServer('restore',value);};}
+  const plannerGoal=document.querySelector('#planner-goal');if(plannerGoal){plannerGoal.setAttribute('aria-label','Career goal');if(!document.querySelector('#planner-goal-help')){const help=document.createElement('p');help.id='planner-goal-help';help.className='small-copy';help.textContent='Describe the outcome you want to reach.';plannerGoal.insertAdjacentElement('afterend',help);}plannerGoal.setAttribute('aria-describedby','planner-goal-help');}
 }
 save();render();
 void loadPlayerState({offlineState:state}).then(result=>{
