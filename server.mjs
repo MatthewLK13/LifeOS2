@@ -3,6 +3,7 @@ import {readFile,stat} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=path.dirname(fileURLToPath(import.meta.url));
+const staticRoot=path.join(root,'dist');
 const port=Number(process.env.PORT||4173);
 const apiPort=Number(process.env.API_PORT||4174);
 if(!Number.isInteger(port)||port<1||port>65535||!Number.isInteger(apiPort)||apiPort<1||apiPort>65535)throw new Error('PORT and API_PORT must be valid TCP port numbers.');
@@ -18,9 +19,9 @@ const server=http.createServer(async(req,res)=>{
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);res.end();return;}
   try{
     const url=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(url.pathname);
-    if(pathname!=='/'&&pathname!=='/index.html'&&!/^\/(src|shared\/catalog|assets)\//.test(pathname)){res.writeHead(404);res.end('Not found');return;}
-    const file=path.resolve(root,pathname==='/'?'index.html':'.'+pathname);
-    if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
+    if(pathname!=='/'&&pathname!=='/index.html'&&!/^\/assets\//.test(pathname)){res.writeHead(404);res.end('Not found');return;}
+    const file=path.resolve(staticRoot,pathname==='/'?'index.html':'.'+pathname);
+    if(!file.startsWith(staticRoot+path.sep)){res.writeHead(403);res.end();return;}
     if(!(await stat(file)).isFile())throw new Error('not a file');
     const data=await readFile(file);res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:data);
   }catch{res.writeHead(404);res.end('Not found');}

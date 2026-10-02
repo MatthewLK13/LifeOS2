@@ -5,11 +5,38 @@ import {createSkillIntelligenceDemoState} from '../src/skill-intelligence.js';
 import {renderTodaySkillPage,renderCareerCampaignPage} from '../src/skill-pages.js';
 
 const styles=fs.readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+const ui=fs.readFileSync(new URL('../src/ui.js',import.meta.url),'utf8');
+const app=fs.readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
 
-test('frontend uses the shared UI rule tokens and neutral foundation overrides',()=>{
-  for(const token of ['--space-1:4px','--space-4:16px','--space-6:32px','--radius-sm:4px','--radius-md:6px','--radius-lg:10px','--text-page:32px','--control-lg:40px','--motion-fast:100ms'])assert.match(styles,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
-  assert.match(styles,/\.brand-mark\{background:var\(--primary\)\}/);
-  assert.match(styles,/main\{background:var\(--bg\);background-image:none/);
+test('frontend uses the V2 token architecture and neutral foundation',()=>{
+  for(const token of ['--primitive-bg: #F8FAFC','--primitive-surface: #FFFFFF','--primitive-primary: #4F7DF3','--primitive-evidence: #2CB5A0','--primitive-advisor: #8B7CF6','--primitive-warning: #B7791F','--primitive-error: #C24141','--primitive-border: #E4EAF2','--color-bg: var(--primitive-bg)','--color-surface: var(--primitive-surface)','--button-primary-bg: var(--color-primary)','--radius-control: 6px','--radius-card: 10px','--motion-fast: 150ms'])assert.match(styles,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.match(styles,/\.brand-mark\s*\{[^}]*background:\s*var\(--color-primary\)/s);
+  assert.match(styles,/main\s*\{[^}]*background:\s*var\(--color-bg\)/s);
+  assert.match(styles,/\.btn\.primary\s*\{/);
+  assert.match(styles,/\.badge\.green\s*\{/);
+  assert.match(styles,/--focus-ring:/);
+  assert.match(styles,/@media \(prefers-reduced-motion: reduce\)/);
+  assert.doesNotMatch(styles,/#17233d|#eee5c9|#3a3221|#16130d/i);
+});
+
+test('shared UI primitives preserve accessible icon and button semantics',()=>{
+  assert.match(ui,/aria-hidden="true" focusable="false"/);
+  assert.match(ui,/button type="button"/);
+});
+
+test('shell foundation includes keyboard-operable drawer semantics',()=>{
+  for(const token of ['main-navigation','aria-controls','aria-expanded','close-menu','drawer-scrim','queueMicrotask','drawerReturnFocus','classList.toggle(\'open\''])assert.match(app,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.match(app,/e\.key==='Escape'.*setDrawer\(false\)/s);
+  assert.match(styles,/\.drawer-scrim:not\(\[hidden\]\)/);
+  assert.match(styles,/body\.drawer-open\s*\{[^}]*overflow:\s*hidden/s);
+});
+
+test('final responsive foundation protects focus, motion, and viewport boundaries',()=>{
+  for(const breakpoint of ['375px','768px','1024px','1440px'])assert.match(styles,new RegExp(breakpoint.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.match(styles,/scroll-padding-top/);
+  assert.match(styles,/overflow-x:\s*hidden/);
+  assert.match(styles,/@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(styles,/\.modal-backdrop[^}]*overscroll-behavior/s);
 });
 
 test('primary V2 pages expose one clear primary action and readable status text',()=>{

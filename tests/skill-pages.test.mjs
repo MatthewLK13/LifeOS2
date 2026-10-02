@@ -32,6 +32,12 @@ test('Today renders all three action choices in order and marks only Recommended
  assert.equal((html.match(/data-action="choose-recommendation"/g)||[]).length,3);
 });
 
+test('Today separates readiness, gaps, evidence, and next-action presentation',()=>{
+ const html=renderTodaySkillPage(createSkillIntelligenceDemoState());
+ for(const marker of ['readiness-title','readiness-context','gap-title','Expected evidence','action-section-note'])assert.match(html,new RegExp(marker));
+ assert.equal((html.match(/class="action-evidence"/g)||[]).length,3);
+});
+
 test('Today visibly reflects a selected action without implying completion',()=>{
  const vm={...createSkillIntelligenceDemoState(),selectedActionId:'backend-developer-1'};
  const html=renderTodaySkillPage(vm);
@@ -65,6 +71,12 @@ test('Career Campaign separates preserved history from adaptive future arcs',()=
  assert.match(html,/Secure a REST API/);
 });
 
+test('Career Campaign makes progress, quest evidence, and Boss Quest state explicit',()=>{
+ const html=renderCareerCampaignPage(createSkillIntelligenceDemoState());
+ for(const marker of ['Campaign progress','campaign-quest-evidence','Evidence after completion','BOSS QUEST · MULTI-SKILL CHECKPOINT','boss-detail'])assert.match(html,new RegExp(marker,'i'));
+ assert.ok((html.match(/data-action="quest-detail"/g)||[]).length>=3);
+});
+
 test('Boss Quest explains objectives, skills, prerequisites, evidence, mock submission, and cosmetic rewards',()=>{
  const vm=createSkillIntelligenceDemoState();
  const html=renderBossQuestDetail(vm.campaign.bossQuests[0]);
@@ -90,6 +102,24 @@ test('Career Skill Map contains only target-role skills and shows their semantic
  assert.doesNotMatch(html,/>Authentication</);
  assert.doesNotMatch(html,/>Docker</);
  assert.match(html,/prerequisite/i);
+});
+
+test('Knowledge provides graph and accessible list parity with search and mastery filtering',()=>{
+ const vm=createSkillIntelligenceDemoState();
+ const list=renderSkillKnowledgePage(vm,{view:'list',search:'docker',filter:'UNSEEN'});
+ assert.match(list,/knowledge-view-list/);
+ assert.match(list,/knowledge-controls/);
+ assert.match(list,/id="concept-search"/);
+ assert.match(list,/id="status-filter"/);
+ assert.match(list,/role="list"/);
+ assert.match(list,/skill-list-row/);
+ assert.match(list,/Open Docker skill details/);
+ assert.match(list,/aria-pressed="false"/);
+ const graph=renderSkillKnowledgePage(vm,{view:'graph'});
+ assert.match(graph,/knowledge-view-graph/);
+ assert.match(graph,/Connected career skill graph/);
+ assert.match(graph,/aria-pressed="true"/);
+ assert.match(graph,/HOW CONCEPTS CONNECT/);
 });
 
 test('skill detail presents evidence sources without exposing evidence text and offers freshness-only Recall',()=>{

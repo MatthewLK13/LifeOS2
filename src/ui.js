@@ -35,8 +35,8 @@ const paths={
  lock:'M6 10h12v11H6V10Zm2 0V6a4 4 0 0 1 8 0v4',
  heart:'M12 21 3 12C-3 3 8-1 12 6c4-7 15-3 9 6l-9 9Z'
 };
-export function icon(name,cls=''){return `<svg class="icon ${cls}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name]||paths.spark}"/></svg>`;}
-export const btn=(label,action,options={})=>`<button class="btn ${options.primary?'primary':''} ${options.class||''}" data-action="${action}" ${options.id?`data-id="${esc(options.id)}"`:''} ${options.disabled?'disabled':''}>${options.icon?icon(options.icon):''}${label}</button>`;
+export function icon(name,cls=''){return `<svg class="icon ${cls}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="${paths[name]||paths.spark}"/></svg>`;}
+export const btn=(label,action,options={})=>`<button type="button" class="btn ${options.primary?'primary':''} ${options.class||''}" data-action="${action}" ${options.id?`data-id="${esc(options.id)}"`:''} ${options.disabled?'disabled':''}>${options.icon?icon(options.icon):''}${label}</button>`;
 export const badge=(text,kind='')=>`<span class="badge ${kind}">${esc(text)}</span>`;
 export const sectionHead=(eyebrow,title,description='',actions='')=>`<header class="page-heading"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${description?`<p>${description}</p>`:''}</div>${actions?`<div class="heading-actions">${actions}</div>`:''}</header>`;
 export const progress=(value,color='')=>`<div class="progress-track" role="progressbar" aria-label="Progress" aria-valuenow="${Math.round(value)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${Math.min(100,Math.max(0,value))}%;${color?`background:${color}`:''}"></span></div>`;

@@ -2,7 +2,7 @@
   "framework": null,
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "installCommand": "pnpm install --frozen-lockfile --prod=false",
   "rewrites": [
     { "source": "/api/:first/:rest+", "destination": "/api/router?__path=/api/:first/:rest+" }
   ],
