@@ -56,6 +56,7 @@ export const updateQuestNote=(questId,content,options)=>mutate(questPath(questId
 export const getJourneys=options=>mutate('/api/journeys','GET',transportOnly(options));
 export const generateJourney=(input,options)=>mutate('/api/journeys/generate','POST',{...transportOnly(options),body:input});
 export const generateAIJourney=(input,options)=>mutate('/api/journeys/generate-ai','POST',{...transportOnly(options),body:input});
+export const getRoadmapAdvice=(input,options)=>mutate('/api/journeys/advice','POST',{...transportOnly(options),body:input});
 export const createJourneyProposal=(journeyId,input,options)=>mutate(`/api/journeys/${encodeURIComponent(journeyId)}/proposals`,'POST',{...transportOnly(options),body:input});
 export const acceptProposal=(proposalId,options)=>mutate(`/api/proposals/${encodeURIComponent(proposalId)}/accept`,'POST',transportOnly(options));
 export const rejectProposal=(proposalId,options)=>mutate(`/api/proposals/${encodeURIComponent(proposalId)}/reject`,'POST',transportOnly(options));
