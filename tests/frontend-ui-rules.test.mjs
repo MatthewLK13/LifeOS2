@@ -31,6 +31,14 @@ test('shell foundation includes keyboard-operable drawer semantics',()=>{
   assert.match(styles,/body\.drawer-open\s*\{[^}]*overflow:\s*hidden/s);
 });
 
+test('final responsive foundation protects focus, motion, and viewport boundaries',()=>{
+  for(const breakpoint of ['375px','768px','1024px','1440px'])assert.match(styles,new RegExp(breakpoint.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.match(styles,/scroll-padding-top/);
+  assert.match(styles,/overflow-x:\s*hidden/);
+  assert.match(styles,/@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(styles,/\.modal-backdrop[^}]*overscroll-behavior/s);
+});
+
 test('primary V2 pages expose one clear primary action and readable status text',()=>{
   const state=createSkillIntelligenceDemoState();
   const today=renderTodaySkillPage(state,{demoPreview:true});

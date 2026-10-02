@@ -20,7 +20,7 @@ export function knowledgeGraph(concepts,{track='all',search='',filter='all',sele
       });
     });
     for(const [from,to] of CROSS_LINKS){const a=positions.get(from),b=positions.get(to);if(a&&b)edges+='<g class="cross-link">'+edge(a[0],a[1]+40,b[0],b[1]+40,'#735982',true)+'</g>';}
-    nodes+=node({x:1200,y:990,id:'all',title:'MY KNOWLEDGE',subtitle:domains.length+' branches · A world to discover',symbol:'tree',color:'#96711d',action:'branch',kind:'root-node atlas-core'});
+     nodes+=node({x:1200,y:990,id:'all',title:'MY KNOWLEDGE',subtitle:domains.length+' branches · A world to discover',symbol:'tree',color:'#4F7DF3',action:'branch',kind:'root-node atlas-core'});
     return canvas(edges,nodes,2100,2400,'atlas');
   }else if(track!=='all'&&!search&&filter==='all'){
     const domain=domains.find(item=>item.id===track),template=trackById(track);
@@ -51,8 +51,8 @@ export function roadmapGraph(journey,quests,selected=0){
   let edges='',nodes='';const chapters=journey.chapters.map((c,i)=>({...chapterPath(i,journey.chapters.length),...c})),depths=[];
   chapters.forEach((c,i)=>depths[i]=c.requires.length?1+Math.max(...c.requires.map(p=>depths[p])):0);
   const coords=chapters.map((c,i)=>{const peers=chapters.map((_,n)=>n).filter(n=>depths[n]===depths[i]);return [600+(peers.indexOf(i)-(peers.length-1)/2)*480,60+depths[i]*220];});
-  chapters.forEach((c,i)=>{const [x,y]=coords[i],qs=quests.filter(q=>q.chapter===i),done=qs.filter(q=>q.status==='completed').length,color=qs.length&&done===qs.length?'#3f6b45':i===selected?'#b23a1f':c.optional?'#795286':'#96711d';
-    c.requires.forEach(p=>edges+=edge(coords[p][0],coords[p][1]+65,x,y+30,c.optional?'#795286':'#9a865c',c.optional));
+   chapters.forEach((c,i)=>{const [x,y]=coords[i],qs=quests.filter(q=>q.chapter===i),done=qs.filter(q=>q.status==='completed').length,color=qs.length&&done===qs.length?'#147C6E':i===selected?'#4F7DF3':c.optional?'#6758C9':'#8A5A00';
+     c.requires.forEach(p=>edges+=edge(coords[p][0],coords[p][1]+65,x,y+30,c.optional?'#6758C9':'#94A3B8',c.optional));
     nodes+=node({x,y,id:String(i),title:c.title,subtitle:`${c.lane} · ${done}/${qs.length} complete`,symbol:done===qs.length?'check':c.optional?'spark':'flag',color,selected:i===selected,action:'chapter',kind:'roadmap-node branching-node'});
     nodes+=`<div class="graph-topic-label" style="left:${x}px;top:${y+140}px">${esc(c.topics.slice(0,2).join(' · '))}</div>`;
   });
